@@ -1,4 +1,6 @@
 #!/bin/sh
+#20181211_22:00
+#recognize newer models
 #20180927_23:00
 #new: nightmode
 #20180717_21:41
@@ -282,9 +284,12 @@ case $modelnr in
   374 ) PRODUCT_ID=0x4227;;
   375 ) PRODUCT_ID=0x4226;;
   376 ) PRODUCT_ID=0x4228;;
+  378 ) PRODUCT_ID=0x4227;; #?
+  379 ) PRODUCT_ID=0x4226;; #?
 ## is the next correct?
+  380 ) PRODUCT_ID=0x4229;;
   381 ) PRODUCT_ID=0x4225;;
-  * ) PRODUCT_ID=unknown;;
+  * ) PRODUCT_ID=0x9999;;
 esac
 export PRODUCT_ID
 export fbrotatevalue=0
