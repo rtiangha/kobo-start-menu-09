@@ -1,0 +1,47 @@
+#!/bin/sh
+#20171128 based on 4.6.10075
+
+if [ "$STARTUP" == "1" ]; then
+  exit;
+fi
+
+# check whether nickel is running
+pidof nickel plato > /dev/null && nickelisrunning=true || nickelisrunning=false
+
+MODULE_LOADED=`lsmod | grep -c g_file_storage`
+if [ $MODULE_LOADED -gt 0 ]; then
+  if [ $ACTION == remove ]; then
+    [ "$nickelisrunning" == "true" ] && echo sd $ACTION $DEVNAME >> /tmp/nickel-hardware-status
+    ACTION=remove /usr/local/Kobo/udev/plug
+    sleep 5
+    exit
+  fi
+fi
+
+MOUNTARGS="noatime,nodiratime,shortname=mixed,utf8"
+
+if [ $ACTION == add ]; then
+# stay compatible with older versions
+  if [ $(blkid | grep -c "TYPE=") -gt 0 ]; then
+    blkid $DEVNAME | grep -v EFI | grep "TYPE=\"vfat\""
+    devname_test=0
+  else
+    [ "$DEVNAME" == "/dev/mmcblk1p1" ] && devname_test=0 || devname_test=1
+  fi
+  if [ $devname_test == 0 ]; then
+    dosfsck -a -w $DEVNAME
+    mount -r -t vfat -o $MOUNTARGS $DEVNAME /mnt/sd
+    if [ $? != 0 ]; then
+      [ "$nickelisrunning" == "true" ] && echo sd mount fail $DEVNAME >> /tmp/nickel-hardware-status &
+    else
+      [ "$nickelisrunning" == "true" ] && echo sd $ACTION $DEVNAME >> /tmp/nickel-hardware-status &
+      [ -e "/mnt/sd/autoscript.sh" ] && sh /mnt/sd/autoscript.sh
+    fi
+  fi
+fi
+
+if [ "$ACTION" == "remove" ]; then
+  [ "$nickelisrunning" == "true" ] && echo sd $ACTION $DEVNAME >> /tmp/nickel-hardware-status &
+  umount -l /mnt/sd
+  sync
+fi

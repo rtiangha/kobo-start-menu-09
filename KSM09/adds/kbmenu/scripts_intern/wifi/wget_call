@@ -1,0 +1,18 @@
+ksmroot=${ksmroot:-"/adds/kbmenu"}
+externalWget="/mnt/onboard/.adds/wget"
+
+if [ -f "${externalWget}/wget" ] && [ -f "${externalWget}/wget.sh" ]; then
+  wget_exe="${externalWget}/wget.sh"
+else
+  wget_exe="wget"
+fi
+
+targetfile=/tmp/html_$(date +%Y%m%d_%H%M%S)
+${wget_exe} -O ${targetfile} ${theurl}
+
+theexitcode=$?
+if [ "${theexitcode}" -ne "0" ]; then
+  ${ksmroot}/kbmessage.sh "exit_code:_${theexitcode}"
+else
+  ${ksmroot}/kbmessage.sh "-f ${targetfile}"
+fi

@@ -1,0 +1,1 @@
+See koreader_find_dot_pdfs.sh as an example how to set a directory to search.

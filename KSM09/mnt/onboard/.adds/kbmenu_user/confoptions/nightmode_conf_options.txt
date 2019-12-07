@@ -1,0 +1,16 @@
+[state]
+invertActive=no
+invertActive=yes
+retainStateOverRestart=no
+retainStateOverRestart=yes
+
+[control]
+longPressDurationMS=800
+longPressDurationMS=1000
+longPressDurationMS=1400
+
+[nightmode]
+refreshScreenPages=0
+refreshScreenPages=1
+refreshScreenPages=2
+refreshScreenPages=3

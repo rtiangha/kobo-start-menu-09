@@ -1,0 +1,143 @@
+#!/bin/sh
+
+################################
+# set info values
+infolines=3
+infotext=""
+################################
+thisScript=$(readlink -f $0)
+ksmroot=${ksmroot:-"/adds/kbmenu"}
+################################
+# check if there is the correct number of arguments
+if [[ $# != 3 ]]; then
+  receivedargs="$*"
+  receivedargs=${receivedargs// /x20}
+  receivedargs="${receivedargs}_usage:<br>AbsolutePathToSourceDirectory_SourceFileBasename_AbsolutePathtoTargetFile</b>"
+  $ksmroot/kbmessage.sh "$receivedargs"
+  exit
+fi
+################################
+workingdir=${1%/}
+if [ ! -d "$workingdir" ]; then
+  $ksmroot/kbmessage.sh "directory not found: $workingdir"
+  exit
+fi
+sourcefilebasename=$(echo "$2")
+targetfile=$(echo "$3")
+################################
+setoptions() {
+  optionlist=""
+  if [ $infolines -gt 0 ]; then
+    optionlist="-infotext=$infotext"
+    optionlist="$optionlist -infolines=$infolines"
+  fi
+
+  if [ "$helpoption" != "" ]; then
+    optionlist="$optionlist $helpoption"
+  fi
+  if [ "$dirlist" != "" ]; then
+    optionlist="$optionlist $dirlist"
+  fi
+  if [ "$filelist01" != "" ]; then
+    optionlist="$optionlist $filelist01"
+  fi
+}
+################################
+if [ -e "$workingdir/help.txt" ]; then
+  helpoption="help:help.png "
+else
+  helpoption=""
+fi
+################################
+# read content of directory
+OIFS="$IFS"
+IFS=$'\n'
+# ---------------------- fill dirlist
+dirlist=""
+for file in $(find $workingdir -maxdepth 1 -mindepth 1 -type d -print)
+do
+#  bar=${file/ /}
+#  bar=${bar/-/}
+#  if [ "$file" == "$bar" ]; then
+  dirlist="$dirlist $(basename $file):menu.png"
+#  fi
+done
+
+# ---------------------- fill filelist
+filelist01=""
+for file in $(find $workingdir -maxdepth 1 -type f -name "${sourcefilebasename}_*" -o -name "$sourcefilebasename")
+do
+#  bar=${file/ /}
+#  bar=${bar/-/}
+#  if [ "$file" == "$bar" ]; then
+  filename=$(basename $file)
+  filelist01="$filelist01 $filename:execute.png"
+#  fi
+done
+IFS="$OIFS"
+################################
+if [ "$dirlist" != "" ]; then
+  dirlist=$(echo $dirlist | xargs -n1 | sort | xargs)
+fi
+if [ "$filelist01" != "" ]; then
+  filelist01=$(echo $filelist01 | xargs -n1 | sort | xargs)
+fi
+################################
+# do the loop
+while [ "$selectedoption" != "EXIT" ]; do
+  setoptions
+  selectedoption=$($ksmroot/kobomenu.sh $optionlist return:arrowup.png return_home:arrowup.png)
+  case "$selectedoption" in
+    return)  selectedoption="EXIT";;
+    return_home)
+      selectedoption="EXIT"
+      echo "return_home"
+      ;;
+    help)
+      $ksmroot/kbmessage.sh "-f $workingdir/help.txt"
+      ;;
+    #    ${sourcefilebasename}*.gz)
+    *.gz)
+      cd "$workingdir"
+      gzip -t "$selectedoption" 2>&1
+      exit_status=$?
+      if [ $exit_status -ne 0 ]; then
+        infotext=$(echo "gzip -t error: exit code $exit_status")
+      else
+        targetdir=$(dirname "${targetfile}")
+        mkdir -p "$targetdir"
+        gzip -cd "$selectedoption" > "$targetfile" 2>&1
+        exit_status=$?
+        if [ $exit_status -ne 0 ]; then
+          infotext=$(echo "gzip error: exit code $exit_status")
+        else
+          infotext=$(echo "extracted  $selectedoption to $targetfile" )
+        fi
+      fi
+      infotext=${infotext// /_}
+      ;;
+    ${sourcefilebasename}*|$sourcefilebasename)
+      targetdir=$(dirname "${targetfile}")
+      mkdir -p "$targetdir"
+      cp $workingdir/$selectedoption $targetfile
+      infotext=$(cp "$workingdir/$selectedoption" "$targetfile" 2>&1)
+      if [ "$infotext" == "" ]; then
+        infotext=$(echo "copied $selectedoption to $targetfile" )
+      fi
+      infotext=${infotext// /_}
+      ;;
+    *)
+      childanswer=$($thisScript "$workingdir/$selectedoption")
+      if [ "$childanswer" == "return_home" ]; then
+        echo "return_home"
+        selectedoption="EXIT"
+      fi
+      infotext=$(echo "selection failed: $workingdir/$selectedoption")
+      infotext=${infotext// /_}
+      ;;
+  esac
+done
+
+
+
+

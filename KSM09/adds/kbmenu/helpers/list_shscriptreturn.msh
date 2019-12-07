@@ -1,0 +1,203 @@
+#!/bin/sh
+
+################################
+# set toggle and info values
+toggleoptiontext="execute/read"
+togglevalues="toggle-execute toggle-read"
+infolines=0
+infotext=""
+################################
+thisScript=$(readlink -f $0)
+ksmroot=${ksmroot:-"/adds/kbmenu"}
+################################
+# check if there is ONE argument
+if [[ $# != 1 ]]; then
+  $ksmroot/kbmessage.sh "usage:<br>$(basename $thisScript) <b>AbsolutePathToDirectory</b>"
+  exit
+fi
+################################
+workingdir=${1%/}
+if [ ! -d "$workingdir" ]; then
+  $ksmroot/kbmessage.sh "directory not found: $workingdir"
+  exit
+fi
+################################
+# load some variables for kobomenu
+. $ksmroot/onstart/exp_block
+################################
+getnexttoggleoption() {
+  cnt=0;
+  i=-1;
+  OLDIFS="$IFS"
+  IFS=" "
+  for toption in $2
+  do
+    if [ "$toption" == "$1" ]; then
+      let i=cnt
+    fi
+# ((++cnt))
+    let ++cnt
+  done
+  let lastel=cnt-1
+  if [ $i -eq -1 ] || [ $i -eq $lastel ]; then
+    i=0
+  else
+    let ++i
+  fi
+  cnt=0
+  for toption in $2
+  do
+    if [ $cnt -eq $i ]; then
+      tresult=$toption
+      break
+    fi
+#    ((++cnt))
+    let ++cnt
+  done
+  IFS="$OLDIFS"
+  echo $tresult
+}
+################################
+setoptions() {
+  optionlist=""
+  if [ $infolines -gt 0 ]; then
+    optionlist="-infotext=$infotext"
+    optionlist="$optionlist -infolines=$infolines"
+  fi
+
+  if [ "$helpoption" != "" ]; then
+    optionlist="$optionlist $helpoption"
+  fi
+
+  if [ "$toggleoptiontext" != "" ]; then
+    optionlist="$optionlist $toggleoptiontext:toggle.png"
+  fi
+  if [ "$displaydirlist" != "" ]; then
+    displaydirlist=$(echo $displaydirlist | xargs -n1 | sort | xargs)
+    optionlist="$optionlist $displaydirlist"
+  fi
+  if [ "$filelist01" != "" ]; then
+    if [ "$toggleoption" == "toggle-read" ]; then
+      optionlist="$optionlist $filelist02"
+    else
+      optionlist="$optionlist $filelist01"
+    fi
+  fi
+}
+################################
+if [ -e "$workingdir/help.txt" ]; then
+  helpoption="help:help.png "
+else
+  helpoption=""
+fi
+################################
+# read content of directory
+OIFS="$IFS"
+IFS=$'\n'
+# ---------------------- fill dirlist
+dirlist=""
+for file in $(find $workingdir -maxdepth 1 -mindepth 1 -type d)
+do
+  bar=${file/ /}
+  bar=${bar/-/}
+  if [ "$file" == "$bar" ]; then
+    dirlist="$dirlist $(basename $file):menu.png"
+  fi
+done
+# ---------------------- fill filelist(s)
+filelist01=""
+filelist02=""
+shdirlist01=""
+shdirlist02=""
+for file in $(find $workingdir -maxdepth 1 -type f -name '*.sh' -o -name '*.msh')
+do
+  bar=${file/ /}
+  bar=${bar/-/}
+  if [ "$file" == "$bar" ]; then
+    filename=$(basename $file)
+    case "${filename##*.}" in
+      sh)
+        filelist01="$filelist01 $filename:execute.png"
+        filelist02="$filelist02 $filename:help.png"
+        ;;
+      msh)
+        shdirlist01="$shdirlist01 $filename:menu.png"
+        shdirlist02="$shdirlist02 $filename:help.png"
+        ;;
+    esac
+  fi
+done
+IFS="$OIFS"
+################################
+if [ "$filelist01" != "" ]; then
+  filelist01=$(echo $filelist01 | xargs -n1 | sort | xargs)
+fi
+if [ "$filelist02" != "" ]; then
+  filelist02=$(echo $filelist02 | xargs -n1 | sort | xargs)
+fi
+displaydirlist="$dirlist $shdirlist01"
+################################
+# preselect first toggle option
+toggleoption=$(getnexttoggleoption "x12y45" "$togglevalues")
+
+################################
+# do the loop
+infolines=3
+while [ "$selectedoption" != "EXIT" ]; do
+  setoptions
+  selectedoption=$($ksmroot/kobomenu.sh "$optionlist return:arrowup.png return_home:arrowup.png")
+  case "$selectedoption" in
+    return)  selectedoption="EXIT";;
+    return_home)
+      selectedoption="EXIT"
+      echo "return_home"
+      ;;
+    help)
+      $ksmroot/kbmessage.sh "-f $workingdir/help.txt"
+      ;;
+    $toggleoptiontext)
+      toggleoption=$(getnexttoggleoption "$toggleoption" "$togglevalues")
+#infotext="current mode:_$toggleoption"
+      case $toggleoption in
+        toggle-execute)
+          displaydirlist="$dirlist $shdirlist01"
+          ;;
+        toggle-read)
+          displaydirlist="$dirlist $shdirlist02"
+          ::
+      esac
+      ;;
+    *.sh)
+      if [ "$toggleoption" == "toggle-execute" ]; then
+        infotext=$($workingdir/$selectedoption)
+        infotext=${infotext// /_}
+        infolines=3
+      else
+        $ksmroot/kbmessage.sh "-f $workingdir/$selectedoption"
+        infolines=0
+      fi
+      ;;
+    *.msh)
+      if [ "$toggleoption" == "toggle-execute" ]; then
+        childanswer=$($workingdir/$selectedoption)
+        if [ "$childanswer" == "return_home" ]; then
+          echo "return_home"
+          selectedoption="EXIT"
+        fi
+      else
+        $ksmroot/kbmessage.sh "-f $workingdir/$selectedoption"
+      fi
+      ;;
+    *)
+      childanswer=$($thisScript "$workingdir/$selectedoption")
+      if [ "$childanswer" == "return_home" ]; then
+        echo "return_home"
+        selectedoption="EXIT"
+      fi
+      ;;
+  esac
+done
+
+
+
+

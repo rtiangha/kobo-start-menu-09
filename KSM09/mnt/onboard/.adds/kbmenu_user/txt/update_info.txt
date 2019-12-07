@@ -1,0 +1,17 @@
+<html>
+<head>
+  <title>kobo menu info</title>
+  <style type="text/css">
+    body {
+    margin: 1em; }
+  </style>
+</head>
+
+<body>
+
+<ul>
+ <li><b>install update:</b> This will install the complete Kobo update package that is available in .kobo</li>
+ <li><b>install partial update:</b> This will install the Kobo update package that is available in .kobo, with the exception of those parts that are likely to disable KSM</li></ul> 
+<ul>
+</body>
+</html>

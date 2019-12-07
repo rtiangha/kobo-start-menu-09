@@ -1,0 +1,2 @@
+
+Copy the file "wget" from the package http://stage.maemo.org/extras/pool/4.0/free/w/wget/wget_1.10.2-2osso2_armel.deb into this folder to allow the example scripts in the KSM "usb" menu to use it and access sites that use the https protocol, which is not supported by the onboard wget provided by busybox.

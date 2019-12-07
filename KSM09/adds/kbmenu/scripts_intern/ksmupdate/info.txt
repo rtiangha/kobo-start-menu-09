@@ -1,0 +1,18 @@
+<html>
+<head>
+  <title>kobo menu info</title>
+  <style type="text/css">
+    body {
+    margin: 1em; }
+  </style>
+</head>
+
+<body>
+
+<ul>
+ <li>Check whether the device is sufficently charged (value of capacity, maximum is 100) before installing updates!</li>
+ <li><b>install ksm update:</b> This will install all KSM update packages that are available on the device. Successfully installed packages will be deleted.</li>
+ <li><b>delete ksm update:</b> This will delete all KSM update packages that are available on the device.</li>
+</ul> 
+</body>
+</html>

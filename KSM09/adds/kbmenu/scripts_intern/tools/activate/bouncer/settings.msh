@@ -1,0 +1,62 @@
+#!/bin/sh
+export mrotation=180
+export QWS_DISPLAY=Transformed:KoboFB:Rot180
+
+ksmroot=${ksmroot:-"/adds/kbmenu"}
+bouncer=$ksmroot/kbbouncer/kbbouncer.sh
+pwfile="$ksmroot/kbbouncer/bouncerpw.txt"
+infotext="This is not a test! This is the real thing!"
+infolines=1
+
+moptions="new_PW check_PW delete_PW return:arrowup.png return_home:arrowup.png"
+selection=""
+while [ "$selection" != "EXIT" ]; do
+  infotext=${infotext// /_}
+  selection=$($ksmroot/kobomenu.sh -infolines=$infolines "-infotext=$infotext" $moptions)
+  case $selection in
+    return)  selection="EXIT";;
+    return_home)
+      selection="EXIT"
+      echo "return_home"
+      ;;
+    new_PW)
+      export KBBouncerMode=setPW
+      pw1=$($bouncer)
+      export KBBouncerMode=repeatPW
+      pw2=$($bouncer)
+      if [ "$pw1" == "$pw2" ]; then
+        infotext="new password set"
+        echo "password=$pw1" > $pwfile
+      else
+        [ -e $pwfile ] && rm $pwfile
+        infotext="password setting failed"
+        [ -e $pwfile ] && rm $pwfile
+      fi
+      ;;
+    check_PW)
+      if [ -e $pouncer ] && [ -e $pwfile ]; then
+        export KBBouncerMode=
+        pw=$(cat $pwfile)
+        answer=""
+        pwcount=0
+        while [ "$answer" != "passed" ] && [ $pwcount -lt 3 ]; do
+          answer=$($bouncer "$pw")
+          let pwcount++
+        done
+        if [ "$answer" == "passed" ]; then
+          infotext="ok"
+        else
+          infotext="failed"
+        fi
+      else
+        infotext="pass_without_checking"
+      fi
+      ;;
+    delete_PW)
+      [ -e $pwfile ] && rm $pwfile
+      infotext="pw_deleted" 
+      ;;
+    *)
+      ;;
+  esac
+done

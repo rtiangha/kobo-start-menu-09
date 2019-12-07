@@ -1,0 +1,8 @@
+<h3>Handle firmware package</h3>
+<p>After selecting one of the existing FW packages, you will be presented with the following options:<br />
+<ul>
+<li>extract: extracts the whole firmware package. <b>Select this only if the firmware was originally designed for your device (pay attention to the mark number)!</b></li>
+<li>extract only root tgz: extracts only KoboRoot.tgz from the firmware package</li>
+<li>delete: delets the firmware package</li>
+</ul>
+<p>Extracting only prepares the firmware update. It does not yet install anything.</p>

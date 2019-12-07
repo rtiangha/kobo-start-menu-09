@@ -1,0 +1,10 @@
+#!/bin/sh
+
+ksmroot=${ksmroot:-"/adds/kbmenu"}
+ksmuser=${ksmuser:-"/mnt/onboard/.adds/kbmenu_user"}
+targetdir=$ksmuser/css
+
+answer=$($ksmroot/helpers/list_customcss.msh "$targetdir")
+echo "$answer"
+
+

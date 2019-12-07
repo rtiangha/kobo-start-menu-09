@@ -1,0 +1,64 @@
+#!/bin/sh
+
+################################
+# set info values
+infolines=2
+infotext="remove_dictionaries_from_database"
+################################
+thisScript=$(readlink -f $0)
+ksmroot=${ksmroot:-"/adds/kbmenu"}
+sqliteprog=$ksmroot/tools/sqlite3
+database=/mnt/onboard/.kobo/KoboReader.sqlite
+################################
+# load some variables for kobomenu
+. $ksmroot/onstart/exp_block
+################################
+################################
+setoptions() {
+  optionlist=""
+  if [ $infolines -gt 0 ]; then
+    infotext=${infotext// /_}
+    optionlist="-infotext=$infotext"
+    optionlist="$optionlist -infolines=$infolines"
+  fi
+  optionlist="$optionlist remove_all"
+  presentDicts=$("$sqliteprog" "$database" "select Suffix from Dictionary order by Suffix")
+  presentDicts=${presentDicts/-/}
+  presentDicts=${presentDicts//$'\n'-/ }
+  optionlist="$optionlist $presentDicts"
+}
+################################
+# do the loop
+while [ "$selectedoption" != "EXIT" ]; do
+  setoptions
+  selectedoption=$($ksmroot/kobomenu $optionlist return:arrowup.png return_home:arrowup.png -qws)
+  case "$selectedoption" in
+    return)  selectedoption="EXIT";;
+    return_home)
+      selectedoption="EXIT"
+      echo "return_home"
+      ;;
+    help)
+      $ksmroot/kbmessage.sh "-f $workingdir/help.txt"
+      ;;
+    remove_all )
+      $sqliteprog $database "delete from Dictionary"
+      infotext="removal of all; sqlite exit code: $?"
+      ;;
+    *)
+      selectedSuffix="-$selectedoption"
+      $sqliteprog $database "delete from Dictionary where Suffix = '$selectedSuffix'"
+      infotext="removal of $selectedoption; sqlite exit code: $?"
+      ;;
+#     childanswer=$($thisScript "$workingdir/$selectedoption")
+#    if [ "$childanswer" == "return_home" ]; then
+#       echo "return_home"
+#       selectedoption="EXIT"
+#     fi
+#     ;;
+  esac
+done
+
+
+
+

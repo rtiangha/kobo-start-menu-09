@@ -1,0 +1,9 @@
+# You can define here whether after booting the menu starts always, never, once, alternating
+# use one of these options: 
+# runmenu=always
+# runmenu=once
+# runmenu=never
+# runmenu=alternateNickel
+# runmenu=alternateMenu
+
+runmenu=always

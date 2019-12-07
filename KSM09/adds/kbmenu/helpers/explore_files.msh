@@ -1,0 +1,216 @@
+#!/bin/sh
+
+################################
+thisScript=$(readlink -f $0)
+ksmroot=${ksmroot:-"/adds/kbmenu"}
+koreadersh=$ksmroot/onstart/start_koreader_args.sh
+#showimagesh=$ksmroot/onstart/showimage.sh
+showimagesh=$ksmroot/kbimageviewer.sh
+
+#testlogfile=$ksmroot/log/log_helpers_listfiles.txt
+################################
+# check if there is ONE argument
+if [[ $# != 1 ]]; then
+  $ksmroot/kbmessage.sh "usage:<br>$(basename $thisScript) <b>AbsolutePathToDirectory</b>"
+  exit
+fi
+################################
+workingdir=${1%/}
+if [ ! -d "$workingdir" ]; then
+  $ksmroot/kbmessage.sh "directory not found: $workingdir"
+  exit
+fi
+################################
+# load some funcitons for handling of lists
+source $ksmroot/helpers/list_utils
+################################
+# set toggle and info values
+case $workingdir in
+  /mnt/onboard*|/mnt/sd* )
+    toggle_options_list="open/info/delete"
+    toggle_pngs_list="help.png/info.png/delete.png"
+    ;;
+  * )
+    toggle_options_list="open/info/delete/cp_to_sysmirror"
+    toggle_pngs_list="help.png/info.png/delete.png/execute.png"
+    ;;
+esac
+toggle_options_count=$(list_get_elements_count "${toggle_options_list}")
+toggle_pngs_count=$(list_get_elements_count "${toggle_pngs_list}")
+if [ "${toggle_options_count}" != "${toggle_pngs_count}" ]; then
+  $ksmroot/kbmessage.sh "Error: number of toggle options and toggle pngs does ot match!"
+  exit
+fi
+
+infolines=1
+infotext="$workingdir"
+
+################################
+setoptions() {
+  optionlist=""
+  if [ $infolines -gt 0 ]; then
+    optionlist="-infotext=$infotext"
+    optionlist="$optionlist -infolines=$infolines"
+  fi
+
+  if [ "$helpoption" != "" ]; then
+    optionlist="$optionlist $helpoption"
+  fi
+
+
+  if [ "${toggle_options_list}" != "" ]; then
+    optionlist="$optionlist ${toggle_options_list}:toggle.png"
+  fi
+
+
+  if [ "$containshtml" == "true" ]; then
+    optionlist="$optionlist open_random_html:game.png"
+  fi
+
+  if [ "$displaydirlist" != "" ]; then
+    displaydirlist=$(echo $displaydirlist | xargs -n1 | sort | xargs)
+    optionlist="$optionlist $displaydirlist"
+  fi
+  if [ "$filelist01" != "" ]; then
+    optionlist="$optionlist $filelist01"
+  fi
+}
+################################
+if [ -e "$workingdir/help.txt" ]; then
+  helpoption="help:help.png "
+else
+  helpoption=""
+fi
+################################
+readdir() {
+# read content of directory
+  OIFS="$IFS"
+  IFS=$'\n'
+# ---------------------- fill dirlist
+  dirlist=""
+  for file in $(find $workingdir -maxdepth 1 -mindepth 1 -type d -print)
+  do
+    bar=${file/ /}
+    bar=${bar/-/}
+    if [ "$file" == "$bar" ]; then
+      dirlist="$dirlist $(basename $file):menu.png"
+    fi
+  done
+# ---------------------- fill filelist(s)
+  local default_png=$(list_get_element_on_position "1" "${toggle_pngs_list}")
+  containshtml=false
+  filelist01=""
+  for file in $(find $workingdir -maxdepth 1 -type f -name "*")
+  do
+    bar=${file/ /}
+    bar=${bar/-/}
+    if [ "$file" == "$bar" ]; then
+      filelist01="$filelist01 $(basename $file):$default_png"
+      if [ "$containshtml" == "false" ]; then
+        case "$file" in
+          *.html )
+            containshtml=true
+            ;;
+        esac
+      fi
+    fi
+  done
+  IFS="$OIFS"
+
+################################
+  if [ "$filelist01" != "" ]; then
+    filelist01=$(echo $filelist01 | xargs -n1 | sort | xargs)
+  fi
+  displaydirlist="$dirlist"
+}
+################################
+# preselect first toggle option
+toggle_index=1
+toggleoption=$(list_get_element_on_position "${toggle_index}" "${toggle_options_list}")
+################################
+readdir
+#echo $filelist01 > $testlogfile
+#echo displaydirlist >> $testlogfile
+################################
+# do the loop
+infotext="current_mode:_$toggleoption"
+while [ "$selectedoption" != "EXIT" ]; do
+  setoptions
+  selectedoption=$($ksmroot/kobomenu.sh $optionlist return:arrowup.png return_home:arrowup.png)
+  case "$selectedoption" in
+    return)  selectedoption="EXIT";;
+    return_home)
+      selectedoption="EXIT"
+      echo "return_home"
+      ;;
+    help)
+      $ksmroot/kbmessage.sh "-f $workingdir/help.txt"
+      ;;
+    open_random_html )
+      randomfile=$($ksmroot/helpers/getrandomfile.sh $workingdir "*.html" "*.htm")
+      if [ "$randomfile" != "" ];then
+        $ksmroot/kbmessage.sh "-f $randomfile"
+      fi
+      ;;
+    ${toggle_options_list})
+      old_toggle_png=$(list_get_element_on_position "${toggle_index}" "${toggle_pngs_list}")
+      toggle_index=$(list_get_next_position_in_circle "${toggle_index}" "${toggle_options_count}")
+      new_toggle_png=$(list_get_element_on_position "${toggle_index}" "${toggle_pngs_list}")
+      toggleoption=$(list_get_element_on_position "${toggle_index}" "${toggle_options_list}")
+      filelist01=${filelist01//:${old_toggle_png}/:${new_toggle_png}}
+ 
+      infotext="current_mode:_$toggleoption"
+      infolines=1
+      ;;
+    *)
+      if [ -d "$workingdir/$selectedoption" ] ; then
+        childanswer=$($thisScript "$workingdir/$selectedoption")
+        if [ "$childanswer" == "return_home" ]; then
+          echo "return_home"
+          selectedoption="EXIT"
+        fi
+      elif [ "$toggleoption" == "info" ]; then
+#
+        infotext=$(ls -l "$workingdir/$selectedoption")
+        infotext=${infotext// /_}
+        infolines=3
+      elif [ "$toggleoption" == "open" ]; then
+        case "$selectedoption" in
+          *.png|*.PNG|*.bmp|*.BMP|*.jpg|*.JPG|*.jpeg|*.JPEG|*.ico|*.ICO|*.tif|*.TIF|*.tiff|*.TIFF|*.gif|*.GIF )
+            $showimagesh "$workingdir/$selectedoption"
+            ;;
+          #          *.epub|*.EPUB|*.pdf|*.PDF|*.txt|*.TXT|*.xps|*.XPS|*.cbz|*.CBZ|*.fb2|*.FB2|*.rtf|*.RTF|*.GIF )
+          *.epub|*.EPUB|*.pdf|*.PDF|*.xps|*.XPS|*.cbz|*.CBZ|*.fb2|*.FB2|*.rtf|*.RTF|*.GIF )
+            $koreadersh "$workingdir/$selectedoption"
+            ;;
+          *)
+            $ksmroot/kbmessage.sh "-f $workingdir/$selectedoption"
+            ;;
+        esac
+        infolines=1
+      elif [ "$toggleoption" == "cp_to_sysmirror" ]; then
+        if [ -d "$ksmuser" ]; then
+          mkdir -p "$ksmuser/sysmirror/$workingdir"
+          cp -rfp "$workingdir/$selectedoption" "$ksmuser/sysmirror/$workingdir"
+        else
+          $ksmroot/kbmessage.sh "please disable usb!"
+        fi
+      else
+        delconfirm=$($ksmroot/kobomenu.sh -infolines=2 "-infotext=delete_$selectedoption" yes no)
+        if [ "$delconfirm" == "yes" ]; then
+          rm $workingdir/$selectedoption
+          sync
+          sleep 2
+          echo 2 > /proc/sys/vm/drop_caches
+          readdir
+          infotext="deleted_$selectedoption"
+          infolines=3
+        fi
+      fi
+      ;;
+  esac
+done
+
+
+
+

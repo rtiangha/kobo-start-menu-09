@@ -1,0 +1,10 @@
+#!/bin/sh
+
+ksmroot=${ksmroot:-"/adds/kbmenu"}
+poff=$ksmroot/onstart/poweroff.sh
+
+if [ -e $poff ]; then
+sh $poff
+fi
+
+/bin/busybox poweroff

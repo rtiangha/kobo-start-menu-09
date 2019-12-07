@@ -1,0 +1,2 @@
+<h3>Experiment with KSM without taking (much) risks</h3>
+<p>See  kbmenu_xy.sh for an example script</p>

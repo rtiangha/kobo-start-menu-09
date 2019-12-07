@@ -1,0 +1,12 @@
+./etc/init.d/rcS
+./etc/udhcpc.d/default.script
+./usr/local/Kobo/udev/ac
+./usr/local/Kobo/udev/plug
+./usr/local/Kobo/udev/sd
+./usr/local/Kobo/udev/usb
+etc/init.d/rcS
+etc/udhcpc.d/default.script
+usr/local/Kobo/udev/ac
+usr/local/Kobo/udev/plug
+usr/local/Kobo/udev/sd
+usr/local/Kobo/udev/usb

@@ -1,0 +1,4 @@
+#!/bin/sh
+ksmuser=${ksmuser:-"/mnt/onboard/.adds/kbmenu_user"}
+
+touch $ksmuser/dont_enable_usbnet_at_boot

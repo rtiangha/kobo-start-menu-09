@@ -1,0 +1,13 @@
+#!/bin/sh
+
+if [ "$STARTUP" == "1" ]; then
+	echo exiting
+	exit;
+fi
+
+if [ "$ACTION" == "offline" -o "$ACTION" == "online" ]; then
+	exit;
+fi
+
+pidof nickel plato > /dev/null || exit
+echo usb ac $ACTION >> /tmp/nickel-hardware-status &

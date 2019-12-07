@@ -1,0 +1,3 @@
+Purpose: handle custom css files for use with kepub(.epub) books.<br>
+Put your css files into .kobo/kobomenu/css.
+Note: Recent versions of nickel do not support the usage of custom css files!

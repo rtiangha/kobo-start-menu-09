@@ -1,0 +1,9 @@
+#!/bin/sh
+ksmroot=${ksmroot:-"/adds/kbmenu"}
+ksmuser=${ksmuser:-"/mnt/onboard/.adds/kbmenu_user"}
+#####
+sourcedir=$ksmuser/backup
+sourcefilebasename=nickel
+targetfile=/usr/local/Kobo/nickel
+#####
+$ksmroot/helpers/restore_helper.msh "$sourcedir" "$sourcefilebasename" "$targetfile"

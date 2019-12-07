@@ -1,0 +1,6 @@
+<h3>Help maintaining Koreader</h3>
+<ul>
+<li><b>delete dead history entries.sh</b>: deletes all history files that point to books that are no longer existent on the internal memory of the device<br>
+deletes also the related sdr folders, irrespective whether they may contain information on still exiting books<br>
+This script concerns only the "main version" of several installed copies of Koreader</li>
+</ul>

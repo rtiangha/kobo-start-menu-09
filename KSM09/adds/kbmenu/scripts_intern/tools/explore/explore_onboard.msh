@@ -1,0 +1,7 @@
+#!/bin/sh
+
+ksmroot=${ksmroot:-"/adds/kbmenu"}
+targetdir=/mnt/onboard/
+
+answer=$($ksmroot/helpers/explore_files.msh "$targetdir")
+echo "$answer"

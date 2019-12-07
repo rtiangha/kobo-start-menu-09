@@ -1,0 +1,15 @@
+#!/bin/sh
+
+ksmroot=${ksmroot:-"/adds/kbmenu"}
+targetdir=/mnt/sd
+
+
+if grep -qs '/mnt/sd ' /proc/mounts; then
+  answer=$($ksmroot/helpers/list_shscripts.msh "$targetdir")
+  echo "$answer"
+else
+  echo "External sd is not mounted!<br>Insert or reinsert the sd and try again after some seconds!"
+fi
+
+
+

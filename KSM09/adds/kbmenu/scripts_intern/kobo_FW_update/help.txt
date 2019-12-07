@@ -1,0 +1,10 @@
+<h3>Download kobo firmware via wifi</h3>
+<ul>
+<li>check FW url.sh: checks whether there is a firmware offered for this device that is newer than the one already installed</li>
+<li>check recentFW url.sh: checks for the latest firmware offered for this device</li>
+<li>download FW.sh: downloads the latest firmware offered for this device if it is newer than the one already installed</li>
+<li>handle FW zip.msh: offers to unzip a (downloaded) FW archive to .kobo<br />
+You can choose between extracting only KoboRoot.tgz, extracting everything, and deleting the FW zip file.
+</li>
+</ul>
+<p>Checking and downloading needs a working wifi connection to the internet<br />

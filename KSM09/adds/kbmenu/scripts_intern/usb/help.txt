@@ -1,0 +1,17 @@
+<h3>USB mass storage:</h3>
+<p>Connecting:</p>
+<ul>
+<li>press "usb enable.sh"</li>
+<li>wait until the message "USB support is enabled" appears</li>
+<li>connect to the PC</li>
+</ul>
+
+<p>Removing:</p>
+<ul>
+<li>eject</li>
+<li>press "usb disable.sh"</li>
+<li>disconnect from PC</li>
+</ul>
+
+<p>If you copy books to the reader you plan to read with nickel, connect to the pc while running nickel rather than doing so from here.</p>
+<p><b>Only for emergency cases</b>: If /mnt is busy and you must urgently connect, try "scripts" > "tests" > "usb dirty"</p> 

@@ -1,0 +1,6 @@
+<h3>Experiment with KSM without taking (much) risks</h3>
+<ul>
+<li>copy the folder kbmenu (of KSM 06 or higher) to .adds/kbmenu_test01 or similar</li>
+<li>create a script file according to the pattern of ...kbmenu/scripts/tests/ksmversions/.adds/kbmenu_test01</li>
+<li>start it from here</li>
+</ul>

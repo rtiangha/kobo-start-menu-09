@@ -1,0 +1,61 @@
+
+
+# list_get_elements_count listofelements
+list_get_elements_count() {
+  local elements=$1
+  local element
+  local elementscount=0
+  OLDIFS="$IFS"
+  IFS="/"
+  for element in ${elements}
+  do
+    let ++elementscount
+  done
+  IFS="$OLDIFS"
+  echo "${elementscount}"
+}
+
+# list_get_next_position_in_circle currentposition elementscount
+list_get_next_position_in_circle() {
+  local currentposition=$1
+  local elementscount=$2
+  local nextposition
+  if [ ${currentposition} -ge ${elementscount} ]; then
+    nextposition=1
+  else
+    let nextposition=${currentposition}+1
+  fi
+  echo "${nextposition}"
+}
+
+# list_get_previous_position_in_circle currentposition elementscount
+list_get_previous_position_in_circle() {
+  local currentposition=$1
+  local elementscount=$2
+  local previousposition
+  if [ ${currentposition} -le 1 ]; then
+    previousposition=${elementscount}
+  else
+    let previousposition=${currentposition}-1
+  fi
+  echo ${previousposition}
+}
+
+#list_get_element_on_position position listofelements
+list_get_element_on_position() {
+  local cnt=1
+  local position=0
+  local result=""
+  OLDIFS="$IFS"
+  IFS="/"
+  for element in $2
+  do
+    if [ $cnt -eq $1 ]; then
+      echo "$element"
+      break
+    fi
+    let ++cnt
+  done
+  IFS="$OLDIFS"
+  echo ""
+}

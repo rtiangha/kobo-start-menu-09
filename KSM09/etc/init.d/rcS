@@ -1,0 +1,259 @@
+#!/bin/sh
+
+#KSM20171222; 4.2.8432
+
+
+if [ ! -e /bin/kobo_config.sh ]; then
+  PRODUCT="trilogy"
+else
+  PRODUCT=`/bin/kobo_config.sh`;
+fi
+export PRODUCT
+
+
+case $PRODUCT in
+  snow)
+    export mousedriver=libKoboTS_h2o2.so
+    ;;
+  *)
+    export mousedriver=libKoboTS.so
+    ;;
+esac
+
+
+[ $PRODUCT != trilogy ] && PREFIX=$PRODUCT-
+
+mount -o remount,noatime,nodiratime /dev/mmcblk0p1 /
+
+PLATFORM=freescale
+if [ `dd if=/dev/mmcblk0 bs=512 skip=1024 count=1 | grep -c "HW CONFIG"` == 1 ]; then
+  CPU=`ntx_hwconfig -s -p /dev/mmcblk0 CPU`
+  PLATFORM=$CPU-ntx
+  WIFI=`ntx_hwconfig -s -p /dev/mmcblk0 Wifi`
+fi
+
+if [ $PLATFORM == freescale ]; then
+  if [ ! -s /lib/firmware/imx/epdc_E60_V220.fw ]; then
+    mkdir -p /lib/firmware/imx
+    dd if=/dev/mmcblk0 bs=512K skip=10 count=1 | zcat > /lib/firmware/imx/epdc_E60_V220.fw
+    sync
+  fi
+elif [ ! -e /etc/u-boot/$PLATFORM/u-boot.mmc ]; then
+  PLATFORM=ntx508
+fi
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/lib:
+runlevel=S
+prevlevel=N
+umask 022
+#export PATH runlevel prevlevel
+export PATH PLATFORM PRODUCT CPU runlevel prevlevel
+
+for i in /proc /dev /root /tmp /sys /mnt/sd /mnt/onboard /mnt/user /var/db /var/lib /var/log /var/run /lib/modules/`uname -r`; do
+  [ ! -d $i ] && mkdir -p $i
+done;
+
+/bin/mount -t proc  none  /proc
+/bin/mount -t tmpfs none -o size=16m /tmp
+/bin/mount -t tmpfs none /dev
+/bin/mount -t tmpfs none -o size=16k /var/lib
+/bin/mount -t tmpfs none -o size=16k /var/log
+/bin/mount -t tmpfs none -o size=128k /var/run
+/bin/mount -t sysfs none -o size=500k /sys
+
+for i in /var/run/dbus /var/lib/dbus; do
+  mkdir -p $i
+done
+
+mkfifo /tmp/nickel-hardware-status
+rm -rf /etc/udev/rules.d/70-persistent-net.rules
+rm -rf /mnt/onboard/.kobo
+rm -rf /mnt/onboard/*
+
+echo -e '\000\000\000\000' > /proc/sys/kernel/hotplug
+/sbin/udevd -d
+
+[ "$(ls -s /etc/udev.tgz | awk '{print $1}')" == 0 ] && rm -rf /etc/udev.tgz
+if [ $PLATFORM == freescale ] || [ ! -e /etc/udev.tgz ]; then
+  /sbin/udevadm control --env=STARTUP=1
+  /sbin/udevadm trigger
+  /sbin/udevadm settle --timeout=2
+  /sbin/udevadm control --env=STARTUP=
+  [ $PLATFORM != freescale ] && tar cpzf /etc/udev.tgz /dev &
+else
+  tar tzf /etc/udev.tgz > /dev/null || ( rm -rf /etc/udev.tgz; reboot )
+  tar zxf /etc/udev.tgz -C /
+fi
+
+export UBOOT_MMC=/etc/u-boot/$PLATFORM/u-boot.mmc
+export UBOOT_RECOVERY=/etc/u-boot/$PLATFORM/u-boot.recovery
+
+# readahead of Qt libs was introduced in 4.0.7523; I think I should not include this in the KSM rcS
+# find /usr/local/Trolltech/QtEmbedded-4.6.2-arm/lib/ -type f -exec readahead {} \;
+
+
+if  [ $(strings /usr/local/Kobo/pickel | grep -c wait-for-hit) -ge 1 ]; then
+  FS_CORRUPT=0
+  dosfsck -a -w /dev/mmcblk0p3 || dosfsck -a -w /dev/mmcblk0p3 || dosfsck -a -w /dev/mmcblk0p3 || dosfsck -a -w /dev/mmcblk0p3 || FS_CORRUPT=1
+  if [ $FS_CORRUPT == 1 ]; then
+    case $PRODUCT in
+      kraken|phoenix|star)
+        export COORDINATES="80 870 70 70 200 870 70 70";;
+      snow)
+        export COORDINATES="180 -1200 100 100 320 -1200 100 100";;
+      dragon|dahlia|alyssum)
+        export COORDINATES="120 1220 100 100 280 1220 100 100";;
+      daylight)
+        export COORDINATES="100 1640 200 200 300 1640 200 200";;
+      *)
+        export COORDINATES="55 685 60 60 150 685 60 60";
+    esac
+    sleep 5
+    zcat /etc/images/$PREFIX\factory-reset.raw.gz | /usr/local/Kobo/pickel showpic
+    /usr/local/Kobo/pickel wait-for-hit $COORDINATES
+    if [ $? != 1 ]; then
+      dd if=$UBOOT_RECOVERY of=/dev/mmcblk0 bs=128k count=1 seek=6
+      sync
+    fi
+    reboot
+  fi
+else
+  dosfsck -a -w /dev/mmcblk0p3
+fi
+mount -t vfat -o noatime,nodiratime,shortname=mixed,utf8 /dev/mmcblk0p3 /mnt/onboard
+rm -rf /mnt/onboard/fsck*
+rm -rf /mnt/onboard/FSCK*
+rm -rf /usr/local/Kobo/db.tgz
+
+#new since 3.3.0
+chmod u+s /libexec/dbus-daemon-launch-helper
+
+
+echo -n 8192 > /proc/sys/vm/min_free_kbytes
+echo -n 67108864 > /proc/sys/kernel/shmmax
+
+isarmhf="FALSE"
+newpickelversion="FALSE"
+if  [ $(strings /usr/local/Kobo/pickel | grep -c ld-linux-armhf.so) -ge 1 ]; then
+  isarmhf="TRUE"
+  if [ $(strings /usr/local/Kobo/pickel | grep -c can-upgrade) -ge 1 ]; then
+    newpickelversion="TRUE"
+  fi
+fi
+
+
+
+if [ ! -e /mnt/onboard/.kobo ]; then
+  mkdir -p /mnt/onboard/.kobo
+fi
+
+INTERFACE=wlan0
+WIFI_MODULE=ar6000
+if [ $PLATFORM != freescale ]; then
+  INTERFACE=eth0
+  WIFI_MODULE=dhd
+  if [ x$WIFI == "xRTL8189" ]; then
+    WIFI_MODULE=8189fs
+  fi
+fi
+
+export INTERFACE
+export WIFI_MODULE
+
+export NICKEL_HOME=/mnt/onboard/.kobo
+export WIFI_MODULE_PATH=/drivers/$PLATFORM/wifi/$WIFI_MODULE.ko
+export LANG=en_US.UTF-8
+
+/bin/dbus-uuidgen > /var/lib/dbus/machine-id
+/bin/dbus-daemon --system &
+export DBUS_SESSION_BUS_ADDRESS=`/bin/dbus-daemon --session --print-address --fork`
+export PLATFORM
+
+
+
+# ---------------- Tshering: insert menu begin
+ksmroot=/adds/kbmenu
+export ksmroot
+installUpdate="TRUE"
+if [ "$isarmhf" == "TRUE" ] && [ "$(sh $ksmroot/onstart/checkinstall.sh)" == "ok" ]; then
+
+  checkscript=$(sh -n $ksmroot/onstart/ksmhome.sh 2>&1)
+  if [ "$checkscript" == "" ]; then
+    $ksmroot/onstart/ksmhome.sh &
+    exit
+  fi
+
+fi
+# ---------------- Tshering: insert menu end
+
+
+if [ "$newpickelversion" == "TRUE" ]; then
+  /usr/local/Kobo/pickel can-upgrade
+  CAN_UPGRADE=$?
+else
+  CAN_UPGRADE=1
+fi
+
+if [ $CAN_UPGRADE == 1 ] && [ -e /mnt/onboard/.kobo/Kobo.tgz ]; then
+  gunzip -t /mnt/onboard/.kobo/Kobo.tgz && tar zxf /mnt/onboard/.kobo/Kobo.tgz -C /usr/local/Kobo/ && ( cat /usr/local/Kobo/revinfo >> /usr/local/Kobo/install.log )
+  rm /mnt/onboard/.kobo/Kobo.tgz
+  echo "Done upgrading..."
+fi
+                               
+if [ $CAN_UPGRADE == 1 ] && [ -e /mnt/onboard/.kobo/KoboRoot.tgz ]; then
+  zcat /etc/images/$PREFIX\ghostbuster.raw.gz | /usr/local/Kobo/pickel showpic
+  /etc/init.d/update-animator.sh &
+
+  gunzip -t /mnt/onboard/.kobo/KoboRoot.tgz && tar zxf /mnt/onboard/.kobo/KoboRoot.tgz -C / && ( cat /usr/local/Kobo/revinfo >> /usr/local/Kobo/install.log )
+  if [ -e /mnt/onboard/.kobo/upgrade ]; then
+    /etc/init.d/upgrade-wifi.sh
+    rm -rf /mnt/onboard/.kobo/upgrade
+  fi
+  rm /mnt/onboard/.kobo/KoboRoot.tgz
+  killall update-animator.sh
+  echo "Done upgrading..."
+
+  zcat /etc/images/$PREFIX\ghostbuster.raw.gz | /usr/local/Kobo/pickel showpic
+  zcat /etc/images/$PREFIX\reboot.raw.gz | /usr/local/Kobo/pickel showpic
+  sync
+  reboot
+fi
+
+
+( usleep 400000; /etc/init.d/on-animator.sh ) &
+
+(
+/usr/local/Kobo/pickel disable.rtc.alarm
+
+if [ ! -e /etc/wpa_supplicant/wpa_supplicant.conf ]; then
+  cp /etc/wpa_supplicant/wpa_supplicant.conf.template /etc/wpa_supplicant/wpa_supplicant.conf
+fi
+
+echo 1 > /sys/devices/platform/mxc_dvfs_core.0/enable
+
+/sbin/hwclock -s -u
+) &
+
+export LD_LIBRARY_PATH=/usr/local/Kobo
+
+# for compatibility with older versions
+export QWS_KEYBOARD=imx508kbd:/dev/input/event0
+export QT_PLUGIN_PATH=/usr/local/Kobo/plugins
+if [ -e /usr/local/Kobo/plugins/gfxdrivers/libimxepd.so ]; then
+  export QWS_DISPLAY=imxepd
+else
+  export QWS_DISPLAY=Transformed:imx508:Rot90
+  export QWS_MOUSE_PROTO="tslib_nocal:/dev/input/event1"
+fi
+
+/usr/local/Kobo/hindenburg &
+
+if [ -e /usr/local/Kobo/platforms/libkobo.so ]; then
+  /usr/local/Kobo/nickel -platform kobo -skipFontLoad &
+  [ $PLATFORM != freescale ] && rm -rf /dev/mmcblk1* && udevadm trigger &
+  insmod /drivers/$PLATFORM/misc/lowmem.ko &
+#  [ `cat /mnt/onboard/.kobo/Kobo/Kobo\ eReader.conf | grep -c dhcpcd=true` == 1 ] && dhcpcd -d -t 10 &
+else
+  /usr/local/Kobo/nickel -qws -skipFontLoad &
+  [ $PLATFORM != freescale ] && rm -rf /dev/mmcblk1* && udevadm trigger &
+fi

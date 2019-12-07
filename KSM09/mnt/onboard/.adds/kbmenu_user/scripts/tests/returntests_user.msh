@@ -1,0 +1,8 @@
+#!/bin/sh
+
+ksmroot=${ksmroot:-"/adds/kbmenu"}
+ksmuser=${ksmuser:-"/mnt/onboard/.adds/kbmenu_user"}
+targetdir=$ksmuser/returntests
+
+answer=$($ksmroot/helpers/list_shscriptreturn.msh "$targetdir")
+echo "$answer"

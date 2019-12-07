@@ -1,0 +1,10 @@
+[general]
+suppressEntries=+rmc_stop+rmc_start+info+toggle_rotation+start_vlasovsoftlauncher+koreader_additions+configure+tools+scripts+user_scripts+reboot+
+
+[koreader]
+
+[nickel]
+
+[special]
+
+[vlasovsoft]

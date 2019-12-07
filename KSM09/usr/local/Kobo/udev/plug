@@ -1,0 +1,18 @@
+#!/bin/sh
+pidof nickel plato > /dev/null || exit
+
+if [ "$STARTUP" == "1" ]; then
+	echo exiting
+	exit;
+fi
+
+if [ "$ACTION" == "offline" ]; then
+	ACTION=remove
+fi
+
+if [ "$ACTION" == "online" ]; then
+	exit;
+fi
+
+echo usb plug $ACTION >> /tmp/nickel-hardware-status &
+

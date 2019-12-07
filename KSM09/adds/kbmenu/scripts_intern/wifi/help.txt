@@ -1,0 +1,25 @@
+<h3>Re-connect to a network that is already known and selected</h3>
+<ul>
+<li>press "wifi enable dhcp.sh"</li>
+</ul>
+
+<h3>Switch off wifi</h3>
+<ul>
+<li>press "wifi disable.sh"</li>
+</ul>
+
+<p>While  "wifi enable dhcp.sh" and "wifi disable.sh" are somehow reliable, do not expect to much from most of the other scripts are less reliable.</p>
+
+<h3>Connect to a network that is not yet known or not selected</h3>
+<ul>
+<li>press "wifi_ap_scan.sh"</li>
+</ul>
+
+<h3>Select a network among the known networks or remove it</h3>
+<ul>
+<li>press "wifi manage networks.sh"</li>
+</ul>
+
+<p>A known selected network is identified by a check mark, a known disabled network is identified by a cross</p>
+
+<p><b>x_wget_*.sh</b> are (almost useless) examples of how to display internet content without browser. All these scripts, with the exception of x_wget_httpbin.org.sh and (at least of the time of writing) x_wget_w1.weather.gov.sh, try to access web pages that use the https protocl and are therefore not accessible with the onboard wget. To make these scripts work you have to install an external wget. Cf. /.adds/wget/info.txt</p>

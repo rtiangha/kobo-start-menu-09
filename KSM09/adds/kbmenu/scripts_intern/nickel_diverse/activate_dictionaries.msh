@@ -1,0 +1,3 @@
+ksmroot=${ksmroot:-"/adds/kbmenu"}
+
+$ksmroot/helpers/list_dictionaries.msh /mnt/onboard/.kobo/dict/

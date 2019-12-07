@@ -1,0 +1,4 @@
+#!/bin/sh
+
+ksmroot=${ksmroot:-"/adds/kbmenu"}
+$ksmroot/onstart/scriptmenuusb.sh $ksmroot/scripts_intern/usb_dirty

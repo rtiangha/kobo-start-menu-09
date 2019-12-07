@@ -1,0 +1,8 @@
+./udev/ac
+./udev/plug
+./udev/sd
+./udev/usb
+udev/ac
+udev/plug
+udev/sd
+udev/usb

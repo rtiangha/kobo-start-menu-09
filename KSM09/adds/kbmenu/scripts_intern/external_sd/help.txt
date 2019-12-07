@@ -1,0 +1,23 @@
+<html>
+<head>
+  <title>kobo menu info</title>
+  <style type="text/css">
+    body {
+    margin: 1em; }
+  </style>
+</head>
+
+<body>
+
+<ul>
+ <li><b>browse ext sd for scripts.msh:</b> You can browse the external sd and execute shell scripts you find there.</li>
+ <li><b>remount sd ro.sh:</b> This will try to remount the external sd as read-only</li></ul> 
+ <li><b>remount sd rw.sh:</b> This will try to remount the external sd as read-write</li></ul> 
+ <li><b>show mount info sd.sh:</b> This will display mount info for the external sd</li></ul> 
+<ul>
+</body>
+</html>
+
+
+
+You can browse the external sd and execute shell scripts you find there.

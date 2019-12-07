@@ -1,0 +1,25 @@
+
+ksmroot=${ksmroot:-"/adds/kbmenu"}
+ksmuser=${ksmuser:-"/mnt/onboard/.adds/kbmenu_user"}
+ksmFontDir=${ksmFontDir:-"$ksmuser/fonts"}
+
+[ -d "$ksmFontDir" ] || ksmFontDir="$ksmroot/fonts"
+
+export QT_PLUGIN_PATH=$ksmroot/Qt/plugins
+export LD_LIBRARY_PATH=$ksmroot/Qt/lib
+#export QWS_MOUSE_PROTO=KoboTS
+export QT_QWS_FONTDIR=$ksmFontDir
+#export QWS_KEYBOARD=KoboKb
+
+if [ "$mrotation" == "0" ] || [ "$mrotation" == "90" ] || [ "$mrotation" == "180" ] || [ "$mrotation" == "270" ]; then
+  export QWS_DISPLAY=Transformed:KoboFB:Rot$mrotation
+else
+  export QWS_DISPLAY=Transformed:KoboFB:Rot90
+fi
+
+if [ "${ksmrotate}" != "$(cat /sys/class/graphics/fb0/rotate)" ]; then
+  echo "${ksmrotate}" > /sys/class/graphics/fb0/rotate
+  if [ "${ksmrotate}" != "$(cat /sys/class/graphics/fb0/rotate)" ]; then
+    echo "$((ksmrotate ^ 2))" > /sys/class/graphics/fb0/rotate
+  fi
+fi

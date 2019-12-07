@@ -1,0 +1,36 @@
+#!/bin/sh
+
+
+ksmroot=${ksmroot:-"/adds/kbmenu"}
+ksmuser=${ksmuser:-"/mnt/onboard/.adds/kbmenu_user"}
+filename=$ksmuser/runsettings.txt
+
+makerunsettingsfile() {
+rm -f $filename
+cat <<EOF >> $filename
+# You can define here whether after booting the menu starts always, never, once, alternating
+# use one of these options: 
+# runmenu=always
+# runmenu=once
+# runmenu=never
+# runmenu=alternateNickel
+# runmenu=alternateMenu
+
+EOF
+}
+
+moptions="always:execute.png once:execute.png never:execute.png alternateNickel:execute.png alternateMenu:execute return:arrowup.png return_home:arrowup.png"
+while [ "$selection" != "EXIT" ]; do
+  selection=$($ksmroot/kobomenu.sh $moptions)
+  case $selection in
+    return)  selection="EXIT";;
+    return_home)
+      selection="EXIT"
+      echo "return_home"
+      ;;
+    *)
+      makerunsettingsfile
+      echo "runmenu=$selection" >> $filename
+      ;;
+  esac
+done

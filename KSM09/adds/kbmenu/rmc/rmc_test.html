@@ -1,0 +1,339 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <title>KSM Remote Control</title>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <style>
+     body {
+      background-color: black;
+     }
+    div {
+      border: 1px solid black;
+      background-color: lightblue;
+      padding-top: 10px;
+      padding-right: 10px;
+      padding-bottom: 0px;
+      padding-left: 10px;
+      border-radius: 10px;
+    }
+
+p {
+     border: none;
+      border-radius: 10px;
+      color: black;
+      background-color: yellow;
+      padding: 1px 5px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+      margin: 4px 4px;
+}
+    input {
+      background-color: #4CAF50;
+      border: none;
+      border-radius: 10px;
+      color: white;
+      padding: 5px 5px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+      margin: 4px 4px;
+      cursor: pointer;
+    }
+
+    input[type="text"] {
+      text-align: left;
+      border-radius: 0px;
+      width: 80%;
+      display: block;
+      margin-bottom: 10px;
+      color: black;
+      background-color: white;
+      cursor: default;
+    }
+    iframe {
+      margin-bottom: 10px;
+   }
+  </style>
+</head>
+
+<body>
+  <div class="panel">
+    <form action="cgi-bin/processcommands.sh" method="post" target="info_frame"   style="float: left">
+      <input type="submit" value="kill KSM">
+      <input type="hidden" name="com_type" value="shell">
+      <input type="hidden" name="com_value" value="killall kobomenu kobomenu.sh ksmhome.sh">
+    </form>
+    <form action="cgi-bin/processcommands.sh" method="post" target="info_frame">
+      <input type="submit" value="start KSM">
+      <input type="hidden" name="com_type" value="shell">
+      <input type="hidden" name="com_value" value="export isKSMsecondaryversion=true; $ksmroot/onstart/ksmhome.sh">
+    </form>
+
+    <form action="cgi-bin/processcommands.sh" method="post" target="info_frame"  style="float: left">
+      <input type="submit" value="ksm message">
+      <input type="hidden" name="com_type" value="shell">
+      <input type="hidden" name="com_value" value='$ksmroot/kbmessage.sh "ok"'>
+    </form>
+
+    <form action="cgi-bin/processcommands.sh" method="post" target="info_frame"  style="float: left">
+      <input type="submit" value="exit ksm message">
+      <input type="hidden" name="com_type" value="shell">
+      <input type="hidden" name="com_value" value="killall kbmessage kbmessage.sh">
+    </form>
+
+    <form action="cgi-bin/processcommands.sh" method="post" target="info_frame" style="float: left">
+      <input type="submit" value="ksm menu">
+      <input type="hidden" name="com_type" value="shell">
+      <input type="hidden" name="com_value" value='$ksmroot/kobomenu.sh "a b c"'>
+    </form>
+
+    <form action="cgi-bin/processcommands.sh" method="post" target="info_frame">
+      <input type="submit" value="exit ksm menu">
+      <input type="hidden" name="com_type" value="shell">
+      <input type="hidden" name="com_value" value="killall kobomenu kobomenu.sh">
+    </form>
+  </div>
+
+  <div class="panel">
+    <form action="cgi-bin/processcommands.sh" method="post" target="info_frame" style="float: left">
+      <input type="submit" value="start nickel">
+      <input type="hidden" name="com_type" value="shell">
+      <input type="hidden" name="com_value" value="$ksmroot/onstart/start_nickel.sh">
+    </form>
+
+    <form action="cgi-bin/processcommands.sh" method="post" target="info_frame" style="float: left">
+      <input type="submit" value="start nickel, basic">
+      <input type="hidden" name="com_type" value="shell">
+      <input type="hidden" name="com_value" value="$ksmroot/scripts_intern/div/start_nickel_basic.sh">
+    </form>
+
+    <form action="cgi-bin/processcommands.sh" method="post" target="info_frame">
+      <input type="submit" value="exit nickel">
+      <input type="hidden" name="com_type" value="shell">
+      <input type="hidden" name="com_value" value="$ksmroot/fmonsh/exit_nickel.sh">
+    </form>
+  </div>
+
+  <div class="panel">
+    <form action="cgi-bin/processcommands.sh" method="post" target="info_frame" style="float: left">
+      <input type="submit" value="start koreader">
+      <input type="hidden" name="com_type" value="shell">
+      <input type="hidden" name="com_value" value="$ksmroot/onstart/start_koreader.sh">
+    </form>
+
+    <form action="cgi-bin/processcommands.sh" method="post" target="info_frame" style="float: left">      <input type="submit" value="start koreader as is">
+      <input type="hidden" name="com_type" value="shell">
+      <input type="hidden" name="com_value" value="$ksmroot/scripts_intern/div/start_koreader_as_is.sh">
+    </form>
+
+    <form action="cgi-bin/processcommands.sh" method="post" target="info_frame" >
+      <input type="submit" value="exit koreader">
+      <input type="hidden" name="com_type" value="shell">
+      <input type="hidden" name="com_value" value="killall reader.lua">
+    </form>
+  </div>
+
+  <div class="panel">
+    <form action="cgi-bin/processcommands.sh" method="post" target="info_frame" style="float: left">
+      <input type="submit" value="start plato">
+      <input type="hidden" name="com_type" value="shell">
+      <input type="hidden" name="com_value" value="$ksmroot/onstart/start_plato.sh">
+    </form>
+
+    <form action="cgi-bin/processcommands.sh" method="post" target="info_frame" style="float: left">
+      <input type="submit" value="start plato as is">
+      <input type="hidden" name="com_type" value="shell">
+      <input type="hidden" name="com_value" value="$ksmroot/scripts_intern/div/start_plato_as_is.sh">
+    </form>
+
+    <form action="cgi-bin/processcommands.sh" method="post" target="info_frame">
+      <input type="submit" value="exit plato">
+      <input type="hidden" name="com_type" value="shell">
+      <input type="hidden" name="com_value" value="killall plato">
+    </form>
+  </div>
+
+
+
+  <div class="panel">
+    <form action="cgi-bin/processcommands.sh" method="post" target="info_frame" style="float: left">
+      <input type="submit" value="clear screen, black">
+      <input type="hidden" name="com_type" value="shell">
+      <input type="hidden" name="com_value" value="epdc_test -b">
+    </form>
+
+    <form action="cgi-bin/processcommands.sh" method="post" target="info_frame">
+      <input type="submit" value="clear screen, white">
+      <input type="hidden" name="com_type" value="shell">
+      <input type="hidden" name="com_value" value="epdc_test -w">
+    </form>
+  </div>
+
+  <div class="panel">
+    <p style="float: left">wifi at boot</p>
+    <form action="cgi-bin/processcommands.sh" method="post" target="info_frame" style="float: left">
+      <input type="submit" name="dont_enable_wifi_at_boot" value="disable">
+      <input type="hidden" name="com_type" value="shell">
+      <input type="hidden" name="com_value" value="touch $ksmuser/dont_enable_wifi_at_boot">
+    </form>
+    <form action="cgi-bin/processcommands.sh" method="post" target="info_frame" style="float: left">
+      <input type="submit" name="enable_wifi_at_boot" value="enable">
+      <input type="hidden" name="com_type" value="shell">
+      <input type="hidden" name="com_value" value="rm $ksmuser/dont_enable_wifi_at_boot">
+    </form>
+    <form action="cgi-bin/processcommands.sh" method="post" target="info_frame" style="float: left">
+      <input type="submit" name="check_setting_of_wifi_at_boot" value="check current setting">
+      <input type="hidden" name="com_type" value="shell">
+      <input type="hidden" name="com_value" value="[ -f $ksmuser/dont_enable_wifi_at_boot ] && echo 'wifi at boot disabled' || echo 'wifi at boot enabled'">
+    </form>
+
+    <p style="float: left">usbNet at boot</p>
+    <form action="cgi-bin/processcommands.sh" method="post" target="info_frame" style="float: left">
+      <input type="submit" name="do_not_enable_usbnet_at_boot" value="disable">
+      <input type="hidden" name="com_type" value="shell">
+      <input type="hidden" name="com_value" value="touch $ksmuser/dont_enable_usbnet_at_boot">
+    </form>
+    <form action="cgi-bin/processcommands.sh" method="post" target="info_frame" style="float: left">
+      <input type="submit" name="enable_usbnet_at_boot" value="enable">
+      <input type="hidden" name="com_type" value="shell">
+      <input type="hidden" name="com_value" value="rm $ksmuser/dont_enable_usbnet_at_boot">
+    </form>
+    <form action="cgi-bin/processcommands.sh" method="post" target="info_frame">
+      <input type="submit" name="check_setting_of_usbnet_at_boot" value="check current setting">
+      <input type="hidden" name="com_type" value="shell">
+      <input type="hidden" name="com_value" value="[ -f $ksmuser/dont_enable_usbnet_at_boot ] && echo 'usbnet at boot disabled' || echo 'usbnet at boot enabled'">
+    </form>
+  </div>
+
+  <div class="panel">
+    <form action="cgi-bin/processcommands.sh" method="post" target="info_frame" style="float: left">
+      <input type="submit" value="reboot">
+      <input type="hidden" name="com_type" value="shell">
+      <input type="hidden" name="com_value" value="reboot">
+    </form>
+    <form action="cgi-bin/processcommands.sh" method="post" target="info_frame" style="float: left">
+      <input type="submit" value="reboot blank">
+      <input type="hidden" name="com_type" value="shell">
+      <input type="hidden" name="com_value" value="touch $ksmuser/start_blank; reboot">
+    </form>
+    <form action="cgi-bin/processcommands.sh" method="post" target="info_frame" style="float: left">
+      <input type="submit" value="power off">
+      <input type="hidden" name="com_type" value="shell">
+      <input type="hidden" name="com_value" value="poweroff">
+    </form>
+    <form action="cgi-bin/processcommands.sh" method="post" target="info_frame">
+      <input type="submit" value="ksm power off">
+      <input type="hidden" name="com_type" value="shell">
+      <input type="hidden" name="com_value" value="$ksmroot/onstart/poweroff.sh">
+    </form>
+  </div>
+
+  <div class="panel">
+    <form action="cgi-bin/processcommands.sh" method="post" target="info_frame" style="float: left">
+      <input type="submit" value="basic info">
+      <input type="hidden" name="com_type" value="shell">
+      <input type="hidden" name="com_value" value="echo PRODUCT=$PRODUCT, PRODUCT_ID=$PRODUCT_ID, CPU=$CPU, PLATFORM=$PLATFORM,\<br\>WIFI_MODULE=$WIFI_MODULE, WIFI_MODULE_PATH=$WIFI_MODULE_PATH\<br\>uname=$(uname -a), FW=$(awk -F',' '{print $3}' /mnt/onboard/.kobo/version)">
+    </form>
+
+    <form action="cgi-bin/processcommands.sh" method="post" target="info_frame" style="float: left">
+      <input type="submit" value="ps">
+      <input type="hidden" name="com_type" value="shell">
+      <input type="hidden" name="com_value" value="ps">
+    </form>
+    <form action="cgi-bin/processcommands.sh" method="post" target="info_frame"  style="float: left">
+      <input type="submit" value="fbset">
+      <input type="hidden" name="com_type" value="shell">
+      <input type="hidden" name="com_value" value="fbset">
+    </form>
+    <form action="cgi-bin/processcommands.sh" method="post" target="info_frame">
+      <input type="submit" value="screenshot">
+      <input type="hidden" name="com_type" value="shell">
+      <input type="hidden" name="com_value" value="[ -e /mnt/onboard ] && $ksmroot/scripts_intern/div/screenshot.sh 2>&1">
+    </form>
+  </div>
+
+  <div class="panel">
+    <p style="float: left">rotate</p>
+    <form action="cgi-bin/processcommands.sh" method="post" target="info_frame" style="float: left">
+      <input type="submit" value="read rotate-value">
+      <input type="hidden" name="com_type" value="shell">
+      <input type="hidden" name="com_value" value="cat /sys/class/graphics/fb0/rotate">
+    </form>
+    <form action="cgi-bin/processcommands.sh" method="post" target="info_frame" style="float: left">
+      <input type="submit" value="set 0">
+      <input type="hidden" name="com_type" value="shell">
+      <input type="hidden" name="com_value" value="echo '0' > /sys/class/graphics/fb0/rotate">
+    </form>
+    <form action="cgi-bin/processcommands.sh" method="post" target="info_frame" style="float: left">
+      <input type="submit" value="set 1">
+      <input type="hidden" name="com_type" value="shell">
+      <input type="hidden" name="com_value" value="echo '1' > /sys/class/graphics/fb0/rotate">
+    </form>
+    <form action="cgi-bin/processcommands.sh" method="post" target="info_frame" style="float: left">
+      <input type="submit" value="set 2">
+      <input type="hidden" name="com_type" value="shell">
+      <input type="hidden" name="com_value" value="echo '2' > /sys/class/graphics/fb0/rotate">
+    </form>
+    <form action="cgi-bin/processcommands.sh" method="post" target="info_frame" style="float: left">
+      <input type="submit" value="set 3">
+      <input type="hidden" name="com_type" value="shell">
+      <input type="hidden" name="com_value" value="echo '3' > /sys/class/graphics/fb0/rotate">
+    </form>
+
+    <form action="cgi-bin/processcommands.sh" method="post" target="info_frame">
+      <input type="submit" value="set read value again">
+      <input type="hidden" name="com_type" value="shell">
+      <input type="hidden" name="com_value" value="echo $(cat /sys/class/graphics/fb0/rotate) > /sys/class/graphics/fb0/rotate" >
+    </form>
+
+  </div>
+
+ 
+  <div class="panel">
+    <script language="JavaScript">
+      function ClearField() {
+        document.getElementById("command_field").value = "";
+      }
+
+      function addToHistory() {
+        var list_item = document.getElementById("command_field").value;
+        var ddl = document.getElementById("history_box");
+        var k = 0;
+        for (k = 0; k < document.getElementById("history_box").length; k++) {
+          if (ddl.options[k].text == list_item) {
+            break;
+          }
+        }
+        ddl.options[k] = new Option(list_item, list_item);
+        return true;
+      }
+
+      function putIntoCommandField() {
+        var e = document.getElementById("history_box");
+        document.getElementById("command_field").value = e.value;
+      }
+
+      function clearHistory() {
+        document.getElementById("history_box").options.length = 0;
+      }
+
+    </script>
+    <form action="cgi-bin/processcommands.sh" method="post" target="info_frame">
+      <input type="text" name="com_value" value="date" id="command_field">
+      <select name="history" id="history_box" onchange="putIntoCommandField();">
+      <input type="button" value="clear history" onclick="clearHistory();">
+     <input type="button" value="clear cml" onclick="ClearField();"> 
+      <input type="submit" value="execute" onclick="addToHistory();">
+     <input type="hidden" name="com_type" value="shell"> 
+</form>
+</div>
+
+<div class="panel">
+<iframe id="info_frame" name="info_frame" width="100%"></iframe>
+</div>
+
+</body>
+</html>

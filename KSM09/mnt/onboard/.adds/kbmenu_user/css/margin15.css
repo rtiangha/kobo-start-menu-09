@@ -1,0 +1,13 @@
+@page {
+    margin : 10px 10px 10px 10px;
+}
+
+body {
+   -webkit-hyphens: auto !important;
+   font-size: 150%!important;
+   line-height: 1.0 !important;
+   widows:  0 !important;
+   orphans:  0 !important;
+   margins: 5pt !important;
+   padding-bottom: 0 !important;
+   }

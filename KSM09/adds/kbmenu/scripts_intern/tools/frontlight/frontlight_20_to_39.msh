@@ -1,0 +1,21 @@
+#!/bin/sh
+
+ksmroot=${ksmroot:-"/adds/kbmenu"}
+frontlightprg=$ksmroot/tools/frontlight
+
+
+lightlevels="20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39"
+moptions="$lightlevels return:arrowup.png return_home:arrowup.png"
+while [ "$selection" != "EXIT" ]; do
+  selection=$($ksmroot/kobomenu.sh $moptions)
+  case $selection in
+    return)  selection="EXIT";;
+    return_home)
+      selection="EXIT"
+      echo "return_home"
+      ;;
+    *)
+     $frontlightprg "$selection"
+      ;;
+  esac
+done

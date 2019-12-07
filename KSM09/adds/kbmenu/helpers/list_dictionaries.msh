@@ -1,0 +1,121 @@
+#!/bin/sh
+
+################################
+# set info values
+infolines=2
+infotext="activate all dictionaries or a single one"
+################################
+thisScript=$(readlink -f $0)
+ksmroot=${ksmroot:-"/adds/kbmenu"}
+activatedicsh=$ksmroot/helpers/activate_dictionary_helper.sh
+################################
+# check if there is ONE argument
+if [[ $# != 1 ]]; then
+  $ksmroot/kbmessage.sh "usage:<br>$(basename $thisScript) <b>AbsolutePathToDirectory</b>"
+  exit
+fi
+################################
+workingdir=${1%/}
+if [ ! -d "$workingdir" ]; then
+  $ksmroot/kbmessage.sh "directory not found: $workingdir"
+  exit
+fi
+################################
+################################
+setoptions() {
+  optionlist=""
+  if [ $infolines -gt 0 ]; then
+    infotext=${infotext// /_}
+    optionlist="-infotext=$infotext"
+    optionlist="$optionlist -infolines=$infolines"
+  fi
+
+  if [ "$helpoption" != "" ]; then
+    optionlist="$optionlist $helpoption"
+  fi
+  if [ "$dirlist" != "" ]; then
+    optionlist="$optionlist $dirlist"
+  fi
+  if [ "$filelist01" != "" ]; then
+    optionlist="$optionlist activate_all:execute $filelist01"
+  fi
+}
+################################
+if [ -e "$workingdir/help.txt" ]; then
+  helpoption="help:help.png "
+else
+  helpoption=""
+fi
+################################
+# read content of directory
+OIFS="$IFS"
+IFS=$'\n'
+# ---------------------- fill dirlist
+dirlist=""
+for file in $(find $workingdir -maxdepth 1 -mindepth 1 -type d -print)
+do
+  bar=${file/ /}
+  bar=${bar/-/}
+  if [ "$file" == "$bar" ]; then
+    dirlist="$dirlist $(basename $file):menu.png"
+  fi
+done
+
+# ---------------------- fill filelist
+filelist01=""
+for file in $(find $workingdir -maxdepth 1 -type f -name 'dicthtml*.zip')
+do
+  bar=${file/ /}
+  if [ "$file" == "$bar" ]; then
+    filename=$(basename $file)
+    filelist01="$filelist01 $filename:execute.png"
+  fi
+done
+IFS="$OIFS"
+################################
+if [ "$dirlist" != "" ]; then
+  dirlist=$(echo $dirlist | xargs -n1 | sort | xargs)
+fi
+if [ "$filelist01" != "" ]; then
+  filelist01=$(echo $filelist01 | xargs -n1 | sort | xargs)
+fi
+################################
+# do the loop
+while [ "$selectedoption" != "EXIT" ]; do
+  setoptions
+  selectedoption=$($ksmroot/kobomenu.sh $optionlist return:arrowup.png return_home:arrowup.png)
+  case "$selectedoption" in
+    return)  selectedoption="EXIT";;
+    return_home)
+      selectedoption="EXIT"
+      echo "return_home"
+      ;;
+    help)
+      $ksmroot/kbmessage.sh "-f $workingdir/help.txt"
+      ;;
+    dicthtml*.zip )
+      infotext=$($activatedicsh "$workingdir/$selectedoption")
+      ;;
+    activate_all )
+      dic_logfile=/tmp/activatedics_$(date +%Y%m%d_%H%M%S).log
+      for thisdic in $filelist01
+      do
+        thisdic=${thisdic/:execute.png/}
+        echotext=$($activatedicsh "$workingdir/$thisdic")
+        echo "$thisdic: $echotext" >> $dic_logfile
+      done
+      $ksmroot/kbmessage.sh -f $dic_logfile
+      ;;
+    #   *)
+#     childanswer=$($thisScript "$workingdir/$selectedoption")
+#    if [ "$childanswer" == "return_home" ]; then
+#       echo "return_home"
+#       selectedoption="EXIT"
+#     fi
+#     ;;
+  esac
+done
+
+
+
+

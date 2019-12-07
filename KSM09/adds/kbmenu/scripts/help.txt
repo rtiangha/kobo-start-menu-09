@@ -1,0 +1,10 @@
+<html>
+
+<body style="margin-top: 2em; margin-left: 1em; margin-right: 1em;">
+
+<p><b>Purpose:</b> Browse sh scripts. 
+With <b>exec/check/read</b> you can toggle between execution mode (script will be executed), check mode (script will be executed with "sh -n"), and read mode (text of the script file will be displayed).</p>
+<p><b>Execute these scripts at your own risk!</b></p>
+
+</body>
+</html>

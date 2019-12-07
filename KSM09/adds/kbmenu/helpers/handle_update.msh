@@ -1,0 +1,133 @@
+#!/bin/sh
+doReboot=TRUE
+doReboot=${doReboot:-"TRUE"}
+ksmroot=${ksmroot:-"/adds/kbmenu"}
+ksmuser=${ksmuser:-"/mnt/onboard/.adds/kbmenu_user"}
+
+if [ -f  /mnt/onboard/.kobo/Kobo.tgz ]; then
+  updateSource=/mnt/onboard/.kobo/Kobo.tgz
+  updateTarget=/usr/local/Kobo/
+  potentialDangerForKSM="udev/ac|udev/plug|udev/sd|udev/usb"
+  updatePrefix=K
+elif [ -f  /mnt/onboard/.kobo/KoboRoot.tgz ]; then
+  updateSource=/mnt/onboard/.kobo/KoboRoot.tgz
+  updateTarget=/
+  potentialDangerForKSM="etc/init.d/rcS|usr/local/Kobo/udev/ac|usr/local/Kobo/udev/plug|usr/local/Kobo/udev/sd|usr/local/Kobo/udev/usb|etc/udhcpc.d/default.script"
+  updatePrefix=KR
+else
+  exit
+fi
+
+excludeDir=${ksmuser}/excludefiles
+
+ksmIdentifier="isforksm.txt"
+
+# list exclude files
+OIFS="$IFS"
+IFS=$'\n'
+mupdateoptions=""
+for file in $(find ${excludeDir} -maxdepth 1 -type f -name ${updatePrefix}'_*.txt')
+do
+  bar=${file/ /}
+  bar=${bar/-/}
+  if [ "$file" == "$bar" ]; then
+    filename=$(basename $file)
+    filename=${filename%.txt}
+    mupdateoptions="${mupdateoptions} ${filename}:execute.png"
+  fi
+done
+IFS="$OIFS"
+
+mupdateoptions="info:help.png give_a_recommendation:help.png ${updatePrefix}_install_uncontrolled:execute.png ${mupdateoptions} delete_update:execute.png return"
+
+recommandedAction="recommendations_might_need_some_minutes"
+updateselection="continue"
+while [ "${updateselection}" != "EXIT" ]; do
+  binfo="capacity: `cat /sys/devices/platform/pmic_battery.1/power_supply/mc13892_bat/capacity`"
+  binfo=${binfo// /_}
+  updateselection=$($ksmroot/kobomenu.sh -infolines=2 "-infotext=${binfo}<br>${recommandedAction}" $mupdateoptions)
+  case $updateselection in
+    info )
+      ${ksmroot}/kbmessage.sh "-f ${ksmuser}/txt/update_info.txt"
+      ;;
+    give_a_recommendation )
+# propose install mode
+      if tar -ztf "${updateSource}" | grep -Ec "${ksmIdentifier}" > /dev/null; then
+        recommandedAction="recom.:${updatePrefix}_install_uncontrolled"
+      elif tar -ztf "${updateSource}" | grep -Ec "${potentialDangerForKSM}" > /dev/null; then
+        recommandedAction="recommanded:${updatePrefix}_install_controlled"
+      else
+        recommandedAction="recommanded:${updatePrefix}_install_uncontrolled"
+      fi
+      ;;
+    K_install_uncontrolled|KR_install_uncontrolled )
+      installUpdate="TRUE"
+      excludeFile=
+      updateselection="EXIT"
+      ;;
+    delete_update )
+      if [ "${updatePrefix}" == "K" ]; then
+        rm -f /mnt/onboard/.kobo/Kobo.tgz
+      else
+        rm -f /mnt/onboard/.kobo/KoboRoot.tgz
+        rm -rf /mnt/onboard/.kobo/upgrade
+        rm -f /mnt/onboard/manifest.md5sum
+      fi
+      installUpdate="FALSE"
+      updateselection="EXIT"
+      ;;
+    return )
+      installUpdate="FALSE"
+      updateselection="EXIT"
+      ;;
+    * )
+      excludeFile="${excludeDir}/${updateselection}.txt"
+      if [ -f ${excludeFile} ]; then
+        installUpdate="TRUE"
+        updateselection="EXIT"
+      else
+        installUpdate="FALSE"
+        ${ksmroot}/kbmessage.sh "something is wrong"
+      fi
+      ;;
+  esac
+done
+
+
+if [ "$installUpdate" == "TRUE" ]; then
+# do the update
+  if [ "$newpickelversion" == "TRUE" ]; then
+    /usr/local/Kobo/pickel can-upgrade
+    CAN_UPGRADE=$?
+  else
+    CAN_UPGRADE=1
+  fi
+  if [ $CAN_UPGRADE == 1 ]; then
+    zcat /etc/images/$PREFIX\ghostbuster.raw.gz > /dev/fb0
+    ${ksmroot}/scripts_intern/div/on-animator.sh &
+    if [ "x${excludeFile}" != "x" ]; then
+      tar ztf "${updateSource}" > /dev/null && tar zxf ${updateSource} -X ${excludeFile} -C ${updateTarget} && ( cat /usr/local/Kobo/revinfo >> /usr/local/Kobo/install.log )
+    else
+      tar ztf "${updateSource}" > /dev/null && tar zxf ${updateSource} -C ${updateTarget} && ( cat /usr/local/Kobo/revinfo >> /usr/local/Kobo/install.log )
+    fi
+###
+    if [ "${updatePrefix}" == "K" ]; then
+      rm /mnt/onboard/.kobo/Kobo.tgz
+    else
+      if [ -e /mnt/onboard/.kobo/upgrade ]; then
+        /etc/init.d/upgrade-wifi.sh
+        rm -rf /mnt/onboard/.kobo/upgrade
+      fi
+      rm /mnt/onboard/.kobo/KoboRoot.tgz
+    fi
+####
+    killall on-animator.sh
+# echo "Done upgrading..."
+    zcat /etc/images/$PREFIX\ghostbuster.raw.gz | /usr/local/Kobo/pickel showpic
+    zcat /etc/images/$PREFIX\reboot.raw.gz | /usr/local/Kobo/pickel showpic
+    sync
+    if [ "${updatePrefix}" == "KR" ] && [ "${doReboot}" != "FALSE" ]; then
+      reboot
+    fi
+  fi
+fi
