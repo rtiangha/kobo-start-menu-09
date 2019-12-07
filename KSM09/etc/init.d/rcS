@@ -1,24 +1,14 @@
 #!/bin/sh
 
-#KSM20171222; 4.2.8432
-
+#KSM20180607; 4.8.11090
+#KSM20180717
 
 if [ ! -e /bin/kobo_config.sh ]; then
   PRODUCT="trilogy"
 else
-  PRODUCT=`/bin/kobo_config.sh`;
+  PRODUCT=`/bin/kobo_config.sh`
 fi
 export PRODUCT
-
-
-case $PRODUCT in
-  snow)
-    export mousedriver=libKoboTS_h2o2.so
-    ;;
-  *)
-    export mousedriver=libKoboTS.so
-    ;;
-esac
 
 
 [ $PRODUCT != trilogy ] && PREFIX=$PRODUCT-
@@ -101,7 +91,7 @@ if  [ $(strings /usr/local/Kobo/pickel | grep -c wait-for-hit) -ge 1 ]; then
         export COORDINATES="80 870 70 70 200 870 70 70";;
       snow)
         export COORDINATES="180 -1200 100 100 320 -1200 100 100";;
-      dragon|dahlia|alyssum)
+      dragon|dahlia|alyssum|nova)
         export COORDINATES="120 1220 100 100 280 1220 100 100";;
       daylight)
         export COORDINATES="100 1640 200 200 300 1640 200 200";;
@@ -147,13 +137,16 @@ if [ ! -e /mnt/onboard/.kobo ]; then
   mkdir -p /mnt/onboard/.kobo
 fi
 
-INTERFACE=wlan0
-WIFI_MODULE=ar6000
-if [ $PLATFORM != freescale ]; then
+if [ $PLATFORM == freescale ]; then
+  INTERFACE=wlan0
+  WIFI_MODULE=ar6000
+else
   INTERFACE=eth0
   WIFI_MODULE=dhd
   if [ x$WIFI == "xRTL8189" ]; then
     WIFI_MODULE=8189fs
+  elif [ x$WIFI == "xRTL8192" ]; then
+    WIFI_MODULE=8192es
   fi
 fi
 
@@ -174,6 +167,18 @@ export PLATFORM
 # ---------------- Tshering: insert menu begin
 ksmroot=/adds/kbmenu
 export ksmroot
+export MODEL_NUMBER=$(cut -f 6 -d ',' /mnt/onboard/.kobo/version | sed -e 's/^[0-]*//')
+case $MODEL_NUMBER in
+  310|320|330|340|350|360|370|371|372|373|375|381)
+    export mousedriver=libKoboTS.so
+    export export QWS_MOUSE_PROTO=KoboTS
+    ;;
+  *)
+    export mousedriver=libKoboTS_h2o2.so
+    export QWS_MOUSE_PROTO=KoboTS_h2o2
+    ;;
+esac
+
 installUpdate="TRUE"
 if [ "$isarmhf" == "TRUE" ] && [ "$(sh $ksmroot/onstart/checkinstall.sh)" == "ok" ]; then
 
@@ -201,9 +206,10 @@ if [ $CAN_UPGRADE == 1 ] && [ -e /mnt/onboard/.kobo/Kobo.tgz ]; then
 fi
                                
 if [ $CAN_UPGRADE == 1 ] && [ -e /mnt/onboard/.kobo/KoboRoot.tgz ]; then
+# next line new since maybe 4.8.11090
+# dd if=$UBOOT_RECOVERY of=/dev/mmcblk0 bs=128k count=1 seek=6
   zcat /etc/images/$PREFIX\ghostbuster.raw.gz | /usr/local/Kobo/pickel showpic
   /etc/init.d/update-animator.sh &
-
   gunzip -t /mnt/onboard/.kobo/KoboRoot.tgz && tar zxf /mnt/onboard/.kobo/KoboRoot.tgz -C / && ( cat /usr/local/Kobo/revinfo >> /usr/local/Kobo/install.log )
   if [ -e /mnt/onboard/.kobo/upgrade ]; then
     /etc/init.d/upgrade-wifi.sh
@@ -215,12 +221,18 @@ if [ $CAN_UPGRADE == 1 ] && [ -e /mnt/onboard/.kobo/KoboRoot.tgz ]; then
 
   zcat /etc/images/$PREFIX\ghostbuster.raw.gz | /usr/local/Kobo/pickel showpic
   zcat /etc/images/$PREFIX\reboot.raw.gz | /usr/local/Kobo/pickel showpic
+# next line new since maybe 4.8.11090
+  dd if=$UBOOT_MMC of=/dev/mmcblk0 bs=128k count=1 seek=6
   sync
   reboot
 fi
 
-
-( usleep 400000; /etc/init.d/on-animator.sh ) &
+(
+if [ $PLATFORM == freescale ] || [ $CPU == mx50 ] || [ $CPU == mx6sl ]; then
+  usleep 400000;
+fi
+/etc/init.d/on-animator.sh
+) &
 
 (
 /usr/local/Kobo/pickel disable.rtc.alarm
@@ -228,11 +240,13 @@ fi
 if [ ! -e /etc/wpa_supplicant/wpa_supplicant.conf ]; then
   cp /etc/wpa_supplicant/wpa_supplicant.conf.template /etc/wpa_supplicant/wpa_supplicant.conf
 fi
-
+# next line is gone, maybe since 4.8.11090
 echo 1 > /sys/devices/platform/mxc_dvfs_core.0/enable
 
 /sbin/hwclock -s -u
 ) &
+
+
 
 export LD_LIBRARY_PATH=/usr/local/Kobo
 

@@ -11,7 +11,8 @@ case $markvalue in
   mark3 ) models="310" ;;
   mark4) models="320 330 340 350" ;;
   mark5 ) models="360 370" ;;
-  mark6 ) models="371" ;;
+  mark6 ) models="371 372 373 374 375 381" ;;
+  mark7 ) models="376 378 379" ;;
 esac
 
 

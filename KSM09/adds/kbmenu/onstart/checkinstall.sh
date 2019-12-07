@@ -1,7 +1,7 @@
 #!/bin/sh
 ksmroot=${ksmroot:-"/adds/kbmenu"}
 ksmuser=${ksmuser:-"/mnt/onboard/.adds/kbmenu_user"}
-
+ksmQt=${ksmQt:-"$ksmroot/Qt"}
 filename=$ksmuser/runsettings.txt
 
 if [ ! -e $filename ]; then 
@@ -44,21 +44,21 @@ if [ ! -e $ksmroot/kobomenu ] ||\
   [ ! -e $ksmroot/kbmessage.sh ] ||\
   [ ! -e $ksmroot/onstart/ksmhome.sh ] ||\
   [ ! -e $ksmroot/onstart/poweroff.sh ] ||\
-  [ ! -e $ksmroot/Qt/lib/libcommon.so ] ||\
-  [ ! -e $ksmroot/Qt/lib/libQtCore.so.4 ] ||\
-  [ ! -e $ksmroot/Qt/lib/libQtGui.so.4 ] ||\
-  [ ! -e $ksmroot/Qt/lib/libQtNetwork.so.4 ] ||\
-  [ ! -e $ksmroot/Qt/lib/libQtSvg.so.4 ] ||\
-  [ ! -e $ksmroot/Qt/lib/libScreenManager.so ] ||\
-  [ ! -e $ksmroot/Qt/lib/libSuspendManager.so ] ||\
-  [ ! -e $ksmroot/Qt/plugins/gfxdrivers/libKoboFb.so ]
+  [ ! -e $ksmQt/lib/libcommon.so ] ||\
+  [ ! -e $ksmQt/lib/libQtCore.so.4 ] ||\
+  [ ! -e $ksmQt/lib/libQtGui.so.4 ] ||\
+  [ ! -e $ksmQt/lib/libQtNetwork.so.4 ] ||\
+  [ ! -e $ksmQt/lib/libQtSvg.so.4 ] ||\
+  [ ! -e $ksmQt/lib/libScreenManager.so ] ||\
+  [ ! -e $ksmQt/lib/libSuspendManager.so ] ||\
+  [ ! -e $ksmQt/plugins/gfxdrivers/libKoboFb.so ]
 then
   echo "failed_important_file_missing"
   exit
 fi
 
-if [ ! -e $ksmroot/Qt/plugins/mousedrivers/$mousedriver ]; then
-  cp $ksmuser/copyrepos/$mousedriver $ksmroot/Qt/plugins/mousedrivers/ 2>/dev/null
+if [ ! -e $ksmQt/plugins/mousedrivers/$mousedriver ]; then
+  cp $ksmuser/copyrepos/$mousedriver $ksmQt/plugins/mousedrivers/ 2>/dev/null
     if [ $? -gt 0 ]; then
     echo "failed_mousedriver_missing"
     exit

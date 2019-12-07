@@ -1,4 +1,12 @@
 #!/bin/sh
+#20180927_23:00
+#new: nightmode
+#20180717_21:41
+#new: changed approach to rotation
+#new: settings for nova
+#new: changed: start server at start; enable usbnet; enable wifi
+#20180311_22:37
+#new: handleWifiAfterKOReader
 #20180126_22:46
 #new: isKSMsecondaryversion
 #new: rmc menu
@@ -10,6 +18,7 @@
 #new: start_plato
 #new: changed approach to rotation
 
+
 # H2O2 (snow) would have 2, but the touch driver only supports 0 orientation
 case $PRODUCT in
   dragon|dahlia)
@@ -20,14 +29,6 @@ case $PRODUCT in
     ;;
 esac
 
-case $PRODUCT in
-  snow)
-    export QWS_MOUSE_PROTO=KoboTS_h2o2
-    ;;
-  *)
-    export QWS_MOUSE_PROTO=KoboTS
-    ;;
-esac
 
 isKSMsecondaryversion=${isKSMsecondaryversion:-"false"}
 ksmroot=${ksmroot:-"/adds/kbmenu"}
@@ -38,7 +39,7 @@ export ksmroot
 export ksmuser
 export koreaderbasedir=/mnt/onboard/.adds
 export platobasedir=/mnt/onboard/.adds/plato
-
+export ksmNightmode=false
 
 ### function configureKSM - begin
 configureKSM() {
@@ -70,7 +71,9 @@ configureKSM() {
   suppressEntries=
   mrotation=90
   allowRmcViaWifi=true
-
+  handleWifiAfterKOReader=ask_the_user
+  ksmColorsNight="-bg black -fg white -btn green"
+  ksmColorsDay="-fg black -bg white"
   vlasovsoftbasedir=
   if [ -e /mnt/onboard/.adds/vlasovsoft/launcher ]; then
     vlasovsoftbasedir=/mnt/onboard/.adds/vlasovsoft
@@ -157,6 +160,10 @@ configureKSM() {
       kobomenuFontsize=60
       kobomenuMenuBarFontsize=50
       ;;
+    nova)
+      kobomenuFontsize=60
+      kobomenuMenuBarFontsize=50
+      ;;
     *)
       kobomenuFontsize=35
       kobomenuMenuBarFontsize=25
@@ -202,6 +209,10 @@ configureKSM() {
   export useDropbear
   export provideSleepInMainMenu
   export allowRmcViaWifi
+  export handleWifiAfterKOReader  
+  export ksmColorsNight
+  export ksmColorsDay
+
   if [ "$PRODUCT" == "snow" ]; then
     mrotation=270
     enablerotation=false
@@ -270,7 +281,9 @@ case $modelnr in
   373 ) PRODUCT_ID=0x4225;;
   374 ) PRODUCT_ID=0x4227;;
   375 ) PRODUCT_ID=0x4226;;
-  381 ) PRODUCT_ID=0x4228;;
+  376 ) PRODUCT_ID=0x4228;;
+## is the next correct?
+  381 ) PRODUCT_ID=0x4225;;
   * ) PRODUCT_ID=unknown;;
 esac
 export PRODUCT_ID
@@ -281,21 +294,20 @@ configureKSM
 
 
 if [ "$isKSMsecondaryversion" != "true" ]; then
-  if [ ! -e "${ksmuser}/dont_enable_usbnet_at_boot" ] || [ ! -e "${ksmuser}/dont_enable_wifi_at_boot" ]; then
-    ${ksmroot}/scripts/web_servers/rmc_start.sh
-    if [ ! -e "${ksmuser}/dont_enable_usbnet_at_boot" ]; then
-      driver_root=/drivers/$PLATFORM/usb/gadget
-      insmod $driver_root/arcotg_udc.ko
-      insmod $driver_root/g_ether.ko host_addr=46:0d:9e:67:69:eb dev_addr=46:0d:9e:67:69:ec
-      ifconfig usb0 192.168.2.101
-    fi
-    if [ ! -e "${ksmuser}/dont_enable_wifi_at_boot" ]; then
-      ${ksmroot}/scripts_intern/wifi/wifi_enable_dhcp.sh
+  if [ ! -e "${ksmuser}/dont_enable_usbnet_at_boot" ]; then
+    ${ksmroot}/scripts_intern/usb/usbnet_toggle.sh
+  fi
+  if [ ! -e "${ksmuser}/dont_enable_wifi_at_boot" ]; then
+    ${ksmroot}/scripts_intern/wifi/wifi_enable_dhcp.sh
 #sleep 5
-    fi
-    $ksmroot/scripts_intern/div/killautormcatsomepoint.sh &>/dev/null &
+  fi
+  if [ ! -e "${ksmuser}/dont_enable_rmc_at_boot" ]; then
+    ${ksmroot}/scripts/web_servers/rmc_start.sh
+    ${ksmroot}/scripts_intern/div/killautormcatsomepoint.sh &>/dev/null &
   fi
 fi
+
+
 if [ -f "${ksmuser}/start_blank" ]; then
   rm "${ksmuser}/start_blank"
   exit
@@ -378,6 +390,7 @@ setoptions() {
   fi
 
   addMenuEntryStringIfWished "info:help.png"
+  addMenuEntryStringIfWished "toggle_nightmode:toggle.png"
 
   if [ "$enablerotation" == "true" ]; then
     addMenuEntryStringIfWished "toggle_rotation:toggle.png"
@@ -494,8 +507,13 @@ while [ "$selection" != "EXIT" ]; do
     else
       wifiInfo="wifi_ip:_not_enabled"
     fi
-    infotext="${usbnetInfo}<br>${wifiInfo}"
-    moptions="-infolines=2 -infotext=${infotext} ${moptions}"
+    if [ ! -e "${ksmuser}/dont_enable_rmc_at_boot" ]; then
+      rmcInfo="$(${ksmroot}/scripts_intern/div/get_rmc_state.sh)"
+    else
+      rmcInfo="rmc_server_is_not_running"
+    fi
+    infotext="${usbnetInfo}<br>${wifiInfo}<br>${rmcInfo}"
+    moptions="-infolines=3 -infotext=${infotext} ${moptions}"
     isFirstRun="FALSE"
   fi
   selection=$($ksmroot/kobomenu.sh $moptions)
@@ -551,6 +569,13 @@ while [ "$selection" != "EXIT" ]; do
         mrotation="0"
       fi
       export mrotation
+      ;;
+    toggle_nightmode )
+      if [ "${ksmNightmode}" == "true" ]; then
+        export ksmNightmode="false"
+      else
+        export ksmNightmode="true"
+      fi
       ;;
     start_nickel )
       $ksmroot/onstart/start_nickel.sh

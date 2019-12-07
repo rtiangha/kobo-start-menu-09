@@ -25,40 +25,40 @@ lsmod | grep -q sdio_wifi_pwr || insmod /drivers/$PLATFORM/wifi/sdio_wifi_pwr.ko
 lsmod | grep -q ${WIFI_MODULE} || insmod /drivers/$PLATFORM/wifi/${WIFI_MODULE}.ko
 sleep 2
 
-answer=$(ifconfig eth0)
+answer=$(ifconfig ${INTERFACE})
 [ "$KSMdebugmode" == "true" ] && echo "ifconfig: $answer" >> $debug_logfile
 case $answer in
   *error*)
-    ifconfig eth0 up
-    wlarm_le -i eth0 up
+    ifconfig ${INTERFACE} up
+    [ ${WIFI_MODULE} = 8189fs ] || [ ${WIFI_MODULE} = 8189es ] || wlarm_le -i ${INTERFACE} up
     ;;
 esac
 
 
-if [ ! -e "/var/run/wpa_supplicant/eth0" ]; then
-  answer=$(wpa_supplicant -D nl80211,wext -B -i eth0 -c $wpaconfigfile)
+if [ ! -e "/var/run/wpa_supplicant/${INTERFACE}" ]; then
+  answer=$(wpa_supplicant -D nl80211,wext -B -i ${INTERFACE} -c $wpaconfigfile)
   if [ "$?" -ne "0" ]; then
-    answer=$(wpa_supplicant -B  -i eth0 -c $wpaconfigfile)
+    answer=$(wpa_supplicant -B  -i ${INTERFACE} -c $wpaconfigfile)
   fi
-  [ "$KSMdebugmode" == "true" ] && echo "wpa_supplicant -B -i eth0 -c $wpaconfigfile: $answer" >> $debug_logfile
-  answer=$(/sbin/udhcpc -S -i eth0 -s /etc/udhcpc.d/default.script -t15 -T10 -A3 -b -q >/dev/null 2>&1 & )
-  [ "$KSMdebugmode" == "true" ] && echo "/sbin/udhcpc -S -i eth0 -s /etc/udhcpc.d/default.script -t15 -T10 -A3 -b -q: $answer" >> $debug_logfile
+  [ "$KSMdebugmode" == "true" ] && echo "wpa_supplicant -B -i ${INTERFACE} -c $wpaconfigfile: $answer" >> $debug_logfile
+  answer=$(/sbin/udhcpc -S -i ${INTERFACE} -s /etc/udhcpc.d/default.script -t15 -T10 -A3 -b -q >/dev/null 2>&1 & )
+  [ "$KSMdebugmode" == "true" ] && echo "/sbin/udhcpc -S -i ${INTERFACE} -s /etc/udhcpc.d/default.script -t15 -T10 -A3 -b -q: $answer" >> $debug_logfile
 fi
 sleep 1
-knownnetworks=$(wpa_cli -ieth0 list_networks)
+knownnetworks=$(wpa_cli -i${INTERFACE} list_networks)
 [ "$KSMdebugmode" == "true" ] && echo "knownnetworks: $knownnetworks" >> $debug_logfile
 
 
 scan() {
-  wpa_cli -ietho0  scan
-  scanresults=$(wpa_cli -ieth0 scan_results)
+  wpa_cli -i${INTERFACE}  scan
+  scanresults=$(wpa_cli -i${INTERFACE} scan_results)
   [ "$KSMdebugmode" == "true" ] && echo "scanresults: $scanresults" >> $debug_logfile
   ap_ssids=$(echo "$scanresults" | awk '/\[/ {print $5}')
   [ "$KSMdebugmode" == "true" ] && echo "ap_ssids: $ap_ssids" >> $debug_logfile
 }
 
 setoptions() {
-  status=$(wpa_cli -ieth0 status)
+  status=$(wpa_cli -i${INTERFACE} status)
   infotext=$(echo -e "$status" | awk '$1 ~ /^ssid=/')
   infotext="$infotext<p>$(echo -e "$status" | awk '$1 ~ /^wpa_state=/')"
   infotext=$(echo $infotext)
@@ -75,8 +75,8 @@ setoptions() {
     if [ "$networkid" == "" ]; then
       moptions="$moptions $ssid"
     else
-      answer=$(wpa_cli -ieth0 get_network "$networkid" disabled)
-      [ "$KSMdebugmode" == "true" ] && echo "wpa_cli -ieth0 getnetwork $networkid disabled: $answer" >> $debug_logfile
+      answer=$(wpa_cli -i${INTERFACE} get_network "$networkid" disabled)
+      [ "$KSMdebugmode" == "true" ] && echo "wpa_cli -i${INTERFACE} getnetwork $networkid disabled: $answer" >> $debug_logfile
       if [ "$answer" == "0" ]; then
         moptions="$moptions $ssid:check.png"
       else
@@ -102,12 +102,12 @@ while [ "$selection" != "EXIT" ]; do
       echo "return_home"
       ;;
     *)
-      nwid=$(wpa_cli -ieth0 list_networks | awk '{if ($2 == "'$selection'") { print $1 }}')
+      nwid=$(wpa_cli -i${INTERFACE} list_networks | awk '{if ($2 == "'$selection'") { print $1 }}')
       [ "$KSMdebugmode" == "true" ] && echo "nwid: $nwid" >> $debug_logfile
       if [ "$nwid" == "" ]; then
-        networkid=$(wpa_cli -ieth0 add_network)
+        networkid=$(wpa_cli -i${INTERFACE} add_network)
         [ "$KSMdebugmode" == "true" ] && echo "networkid: $networkid" >> $debug_logfile
-        answer=$(wpa_cli -ieth0 set_network $networkid ssid \""$selection"\")
+        answer=$(wpa_cli -i${INTERFACE} set_network $networkid ssid \""$selection"\")
         [ "$KSMdebugmode" == "true" ] && echo "set_network ssid: $answer" >> $debug_logfile
 
         key_mgmt=$(echo "$scanresults" | awk '{if ($5 == "'$selection'") { print $4 }}')
@@ -121,12 +121,12 @@ while [ "$selection" != "EXIT" ]; do
             [ "$KSMdebugmode" == "true" ] && echo "pw1: $pw1" >> $debug_logfile
             pw1=$(wpa_passphrase "$selection" "$pw1" | grep ^\\\spsk | sed -e s/^\\\spsk=//)
             [ "$KSMdebugmode" == "true" ] && echo "pw1 encoded: $pw1" >> $debug_logfile
-            answer=$(wpa_cli -ieth0 set_network $networkid psk $pw1)
+            answer=$(wpa_cli -i${INTERFACE} set_network $networkid psk $pw1)
             [ "$KSMdebugmode" == "true" ] && echo "set_network psk $pw1: $answer" >> $debug_logfile
             ;;
         esac
 
- #       answer=$(wpa_cli -ieth0 enable_network $networkid)
+ #       answer=$(wpa_cli -i${INTERFACE} enable_network $networkid)
  #       [ "$KSMdebugmode" == "true" ] && echo "enable_network $networkid: $answer" >> $debug_logfile
        answer=$(wpa_cli select_network $networkid)
         [ "$KSMdebugmode" == "true" ] && echo "select_network $networkid: $answer" >> $debug_logfile
@@ -134,18 +134,18 @@ while [ "$selection" != "EXIT" ]; do
 
 
       else
-        answer=$(wpa_cli -ieth0 select_network $nwid)
-        [ "$KSMdebugmode" == "true" ] && echo "wpa_cli -ieth0 select_network $nwid: $answer" >> $debug_logfile
+        answer=$(wpa_cli -i${INTERFACE} select_network $nwid)
+        [ "$KSMdebugmode" == "true" ] && echo "wpa_cli -i${INTERFACE} select_network $nwid: $answer" >> $debug_logfile
 
       fi
       sleep 1
         answer=$(wpa_cli save)
         [ "$KSMdebugmode" == "true" ] && echo "wpa_cli save: $answer" >> $debug_logfile
 
-#    answer=$(dhcpcd eth0)
-#   [ "$KSMdebugmode" == "true" ] && echo "dhcpcd eth0: $answer" >> $debug_logfile
-      answer=$(/sbin/udhcpc -S -i eth0 -s /etc/udhcpc.d/default.script -t15 -T10 -A3 -b -q >/dev/null 2>&1 & )
-      [ "$KSMdebugmode" == "true" ] && echo "/sbin/udhcpc -S -i eth0 -s /etc/udhcpc.d/default.script -t15 -T10 -A3 -b -q: $answer" >> $debug_logfile
+#    answer=$(dhcpcd ${INTERFACE})
+#   [ "$KSMdebugmode" == "true" ] && echo "dhcpcd ${INTERFACE}: $answer" >> $debug_logfile
+      answer=$(/sbin/udhcpc -S -i ${INTERFACE} -s /etc/udhcpc.d/default.script -t15 -T10 -A3 -b -q >/dev/null 2>&1 & )
+      [ "$KSMdebugmode" == "true" ] && echo "/sbin/udhcpc -S -i ${INTERFACE} -s /etc/udhcpc.d/default.script -t15 -T10 -A3 -b -q: $answer" >> $debug_logfile
       ;;
   esac
 done

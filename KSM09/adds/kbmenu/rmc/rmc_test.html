@@ -201,11 +201,29 @@ p {
       <input type="hidden" name="com_type" value="shell">
       <input type="hidden" name="com_value" value="rm $ksmuser/dont_enable_usbnet_at_boot">
     </form>
-    <form action="cgi-bin/processcommands.sh" method="post" target="info_frame">
+    <form action="cgi-bin/processcommands.sh" method="post" target="info_frame" style="float: left">
       <input type="submit" name="check_setting_of_usbnet_at_boot" value="check current setting">
       <input type="hidden" name="com_type" value="shell">
       <input type="hidden" name="com_value" value="[ -f $ksmuser/dont_enable_usbnet_at_boot ] && echo 'usbnet at boot disabled' || echo 'usbnet at boot enabled'">
     </form>
+
+    <p style="float: left">remote control server at boot</p>
+    <form action="cgi-bin/processcommands.sh" method="post" target="info_frame" style="float: left">
+      <input type="submit" name="do_not_enable_rmc_at_boot" value="disable">
+      <input type="hidden" name="com_type" value="shell">
+      <input type="hidden" name="com_value" value="touch $ksmuser/dont_enable_rmc_at_boot">
+    </form>
+    <form action="cgi-bin/processcommands.sh" method="post" target="info_frame" style="float: left">
+      <input type="submit" name="enable_rmc_at_boot" value="enable">
+      <input type="hidden" name="com_type" value="shell">
+      <input type="hidden" name="com_value" value="rm $ksmuser/dont_enable_rmc_at_boot">
+    </form>
+    <form action="cgi-bin/processcommands.sh" method="post" target="info_frame">
+      <input type="submit" name="check_setting_of_rmc_at_boot" value="check current setting">
+      <input type="hidden" name="com_type" value="shell">
+      <input type="hidden" name="com_value" value="[ -f $ksmuser/dont_enable_rmc_at_boot ] && echo 'rmc at boot disabled' || echo 'rmc at boot enabled'">
+    </form>
+
   </div>
 
   <div class="panel">

@@ -10,7 +10,7 @@ fi
 
 
 case $PRODUCT in
-  dragon|dahlia|snow ) vlasovsoftrotate="2";;
+  dragon|dahlia ) vlasovsoftrotate="2";;
   * ) vlasovsoftrotate="0";;
 esac
 if [ "${vlasovsoftrotate}" != "$(cat /sys/class/graphics/fb0/rotate)" ]; then

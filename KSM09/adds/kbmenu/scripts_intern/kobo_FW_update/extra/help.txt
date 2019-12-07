@@ -1,2 +1,3 @@
 <h3>Check for or download recent kobo firmware for mark 3, 4, 5 or 6 via wifi</h3>
 <p>If you are unsure what it is about, please leave it!<p>
+<p>Note: I added mark 7. There might however be some problems! Double check the download URL, before you download and apply the package!<p>

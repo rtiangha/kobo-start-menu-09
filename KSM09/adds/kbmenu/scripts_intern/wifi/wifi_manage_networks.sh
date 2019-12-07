@@ -18,22 +18,22 @@ lsmod | grep -q sdio_wifi_pwr || insmod /drivers/$PLATFORM/wifi/sdio_wifi_pwr.ko
 lsmod | grep -q ${WIFI_MODULE} || insmod /drivers/$PLATFORM/wifi/${WIFI_MODULE}.ko
 sleep 2
 
-answer=$(ifconfig eth0)
+answer=$(ifconfig ${INTERFACE})
 [ "$KSMdebugmode" == "true" ] && echo "ifconfig: $answer" >> $debug_logfile
 case $answer in
   *error*)
-    ifconfig eth0 up
-    wlarm_le -i eth0 up
+    ifconfig ${INTERFACE} up
+    [ ${WIFI_MODULE} = 8189fs ] || [ ${WIFI_MODULE} = 8189es ] || wlarm_le -i ${INTERFACE} up
     ;;
 esac
 
 
-if [ ! -e "/var/run/wpa_supplicant/eth0" ]; then
-  answer=$(wpa_supplicant -B -D nl80211,wext -i eth0 -c $wpaconfigfile)
+if [ ! -e "/var/run/wpa_supplicant/${INTERFACE}" ]; then
+  answer=$(wpa_supplicant -B -D nl80211,wext -i ${INTERFACE} -c $wpaconfigfile)
   if [ "$?" -ne "0" ]; then
-    answer=$(wpa_supplicant -B  -i eth0 -c $wpaconfigfile)
+    answer=$(wpa_supplicant -B  -i ${INTERFACE} -c $wpaconfigfile)
   fi
-  [ "$KSMdebugmode" == "true" ] && echo "wpa_supplicant -B -i eth0 -c $wpaconfigfile: $answer" >> $debug_logfile
+  [ "$KSMdebugmode" == "true" ] && echo "wpa_supplicant -B -i ${INTERFACE} -c $wpaconfigfile: $answer" >> $debug_logfile
 fi
 sleep 1
 
@@ -41,7 +41,7 @@ sleep 1
 
 setoptions() {
   moptions=""
-  knownnetworks=$(wpa_cli -ieth0 list_networks)
+  knownnetworks=$(wpa_cli -i${INTERFACE} list_networks)
   [ "$KSMdebugmode" == "true" ] && echo "knownnetworks: $knownnetworks" >> $debug_logfile
   nw_ssids=$(echo "$knownnetworks" | awk '/\[/ {print $2}')
   nw_ssids=$(echo $nw_ssids)
@@ -57,7 +57,7 @@ setoptions() {
     nw_id=$(echo "$knownnetworks" | awk -v the_ssid=$nw_ssid '{if($2==the_ssid) {print $1}}')
     [ "$KSMdebugmode" == "true" ] && echo "nw_id: $nw_id" >> $debug_logfile
 
-    status=$(wpa_cli -ieth0 get_network "$nw_id" disabled)
+    status=$(wpa_cli -i${INTERFACE} get_network "$nw_id" disabled)
     [ "$KSMdebugmode" == "true" ] && echo "status: $status" >> $debug_logfile
     if [ "$status" == "0" ]; then
       moptions="$moptions $nw_ssid:check.png"
@@ -76,8 +76,8 @@ while [ "$selection" != "EXIT" ]; do
   selection=$($ksmroot/kobomenu.sh $moptions)
   case $selection in
     save)
-      answer=$(wpa_cli -ieth0 save)
-      [ "$KSMdebugmode" == "true" ] && echo "wpa_cli -ieth0 save: $answer" >> $debug_logfile
+      answer=$(wpa_cli -i${INTERFACE} save)
+      [ "$KSMdebugmode" == "true" ] && echo "wpa_cli -i${INTERFACE} save: $answer" >> $debug_logfile
       ;;
     return)  selection="EXIT";;
     return_home)
@@ -91,15 +91,15 @@ while [ "$selection" != "EXIT" ]; do
         select)
           networkid=$(echo "$knownnetworks" | awk -v the_ssid=$selection '{if($2==the_ssid) {print $1}}')
           [ "$KSMdebugmode" == "true" ] && echo "networkid: $networkid" >> $debug_logfile
-          answer=$(wpa_cli -ieth0 select_network $networkid)
-          [ "$KSMdebugmode" == "true" ] && echo "select_network -ieth0 $networkid: $answer" >> $debug_logfile
+          answer=$(wpa_cli -i${INTERFACE} select_network $networkid)
+          [ "$KSMdebugmode" == "true" ] && echo "select_network -i${INTERFACE} $networkid: $answer" >> $debug_logfile
           sleep 1
           ;;
         remove)
           networkid=$(echo "$knownnetworks" | awk -v the_ssid=$selection '{if($2==the_ssid) {print $1}}')
           [ "$KSMdebugmode" == "true" ] && echo "networkid: $nw_id" >> $debug_logfile
-          answer=$(wpa_cli -ieth0 remove_network $networkid)
-          [ "$KSMdebugmode" == "true" ] && echo "remove_network -ieth0 $networkid: $answer" >> $debug_logfile
+          answer=$(wpa_cli -i${INTERFACE} remove_network $networkid)
+          [ "$KSMdebugmode" == "true" ] && echo "remove_network -i${INTERFACE} $networkid: $answer" >> $debug_logfile
           sleep 1
           ;;
       esac

@@ -1,4 +1,6 @@
 #!/bin/sh
+# 20180719
+# 20180618
 # 20171202 based on 4.6.10075
 
 # ---- Tshering start
@@ -40,12 +42,21 @@ if [ $ACTION == add ]; then
 
 # ---- Tshering start
 # disable usbnet
-# this will need some changes for if [ $CPU == mx6sll ] || [ $CPU == mx6ull ]
-  if ifconfig | grep -q usb0; then
-    ifconfig usb0 down
-    rmmod g_ether
+if ifconfig | grep -q usb0; then
+  ifconfig usb0 down
+  rmmod g_ether
+  if [ $CPU == mx6sll ] || [ $CPU == mx6ull ]; then
+    rmmod usb_f_rndis
+    rmmod usb_f_ecm_subset
+    rmmod usb_f_eem
+    rmmod usb_f_ecm
+    rmmod u_ether
+    rmmod libcomposite
+    rmmod configfs
+  else
     rmmod arcotg_udc
   fi
+fi
 # ---- Tshering end
 
 # ---- Tshering start

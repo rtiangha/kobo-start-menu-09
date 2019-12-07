@@ -1,6 +1,8 @@
 #!/bin/sh
 
 ksmroot=${ksmroot:-"/adds/kbmenu"}
+handleWifiAfterKOReader=${handleWifiAfterKOReader:-"ask_the_user"}
+
 
 [ "$koreaderbasedir" == "" ] && exit
 koreadersh=$koreaderbasedir/koreader/koreader.sh
@@ -67,13 +69,24 @@ $frontlightprg "$KSMfrontlightlevel"
 
 $ksmroot/onstart/clean_up_after_koreader.sh
 
-if [ $(lsmod | grep -c sdio_wifi_pwr) -gt 0 ]; then
-  switchoffselection=$($ksmroot/kobomenu.sh -infolines=1 "-infotext=""Switch_off_wifi?" "yes no")
-  case $switchoffselection in
-    yes )
-      $ksmroot/scripts_intern/wifi/wifi_disable.sh;;
-  esac
+
+if [ "${handleWifiAfterKOReader}" != "leave_alone" ]; then
+  if [ $(lsmod | grep -c sdio_wifi_pwr) -gt 0 ]; then
+    case ${handleWifiAfterKOReader} in
+      ask_the_user )
+        switchoffselection=$($ksmroot/kobomenu.sh -infolines=1 -infotext="Switch_off_wifi?" "yes no")
+        case $switchoffselection in
+          yes )
+            $ksmroot/scripts_intern/wifi/wifi_disable.sh;;
+        esac
+        ;;
+      switch_off )
+        $ksmroot/scripts_intern/wifi/wifi_disable.sh;;
+    esac
+  else
+    case ${handleWifiAfterKOReader} in
+      switch_on )
+        $ksmroot/scripts_intern/wifi/wifi_enable_dhcp.sh;;
+    esac
+  fi
 fi
-
-
-
