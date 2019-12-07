@@ -27,7 +27,7 @@ case $PRODUCT in
     export ksmrotate=2
     ;;
   *)
-    export ksmrotate=0
+    export ksmrotate=1
     ;;
 esac
 
