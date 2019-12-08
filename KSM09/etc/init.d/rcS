@@ -171,7 +171,7 @@ export MODEL_NUMBER=$(cut -f 6 -d ',' /mnt/onboard/.kobo/version | sed -e 's/^[0
 case $MODEL_NUMBER in
   310|320|330|340|350|360|371|372|373|375|381) #Touch A/B/C, Glo, Mini, Aura HD, Aura, Glo HD, Touch 2.0, Aura ONE, Aura Edition 2 v1, Aura ONE LE
     export mousedriver=libKoboTS.so
-    export export QWS_MOUSE_PROTO=KoboTS
+    export QWS_MOUSE_PROTO=KoboTS
     ;;
   370) #Aura H2O
     export mousedriver=libKoboTS_h2o.so
