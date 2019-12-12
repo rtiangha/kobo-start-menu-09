@@ -289,6 +289,7 @@ case $modelnr in
   374 ) PRODUCT_ID=0x4227;; # Aura H2O Edition 2 v1
   375 ) PRODUCT_ID=0x4226;; # Aura Edition 2 v1
   376 ) PRODUCT_ID=0x4228;; # Clara HD
+  377 ) PRODUCT_ID=0x4229;; # Forma
   378 ) PRODUCT_ID=0x4227;; #? Aura H2O Edition 2 v2
   379 ) PRODUCT_ID=0x4226;; #? Aura Edition 2 v2
 ## is the next correct?
