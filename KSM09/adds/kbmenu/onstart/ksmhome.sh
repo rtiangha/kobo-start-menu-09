@@ -295,6 +295,7 @@ case $modelnr in
 ## is the next correct?
   380 ) PRODUCT_ID=0x4229;; # Forma 32G
   381 ) PRODUCT_ID=0x4225;; # Aura ONE Limited Edition
+  384 ) PRODUCT_ID=0x4232;; # Libra H2O
   * ) PRODUCT_ID=0x9999;;
 esac
 export PRODUCT_ID
