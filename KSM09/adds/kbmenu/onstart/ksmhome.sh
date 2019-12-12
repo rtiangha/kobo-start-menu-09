@@ -276,24 +276,24 @@ echo "dc 0" > /sys/devices/platform/pmic_light.1/lit
 
 modelnr=$($ksmroot/onstart/getmodelnr.sh)
 case $modelnr in
-  310 ) PRODUCT_ID=0x4163;;
-  320 ) PRODUCT_ID=0x4163;;
-  330 ) PRODUCT_ID=0x4173;;
-  340 ) PRODUCT_ID=0x4183;;
-  350 ) PRODUCT_ID=0x4193;;
-  360 ) PRODUCT_ID=0x4203;;
-  370 ) PRODUCT_ID=0x4213;;
-  371 ) PRODUCT_ID=0x4223;;
-  372 ) PRODUCT_ID=0x4224;;
-  373 ) PRODUCT_ID=0x4225;;
-  374 ) PRODUCT_ID=0x4227;;
-  375 ) PRODUCT_ID=0x4226;;
-  376 ) PRODUCT_ID=0x4228;;
-  378 ) PRODUCT_ID=0x4227;; #?
-  379 ) PRODUCT_ID=0x4226;; #?
+  310 ) PRODUCT_ID=0x4163;; # Touch A/B
+  320 ) PRODUCT_ID=0x4163;; # Touch C
+  330 ) PRODUCT_ID=0x4173;; # Glo
+  340 ) PRODUCT_ID=0x4183;; # Mini
+  350 ) PRODUCT_ID=0x4193;; # Aura HD
+  360 ) PRODUCT_ID=0x4203;; # Aura
+  370 ) PRODUCT_ID=0x4213;; # Aura H2O
+  371 ) PRODUCT_ID=0x4223;; # Glo HD
+  372 ) PRODUCT_ID=0x4224;; # Touch 2.0
+  373 ) PRODUCT_ID=0x4225;; # Aura ONE
+  374 ) PRODUCT_ID=0x4227;; # Aura H2O Edition 2 v1
+  375 ) PRODUCT_ID=0x4226;; # Aura Edition 2 v1
+  376 ) PRODUCT_ID=0x4228;; # Clara HD
+  378 ) PRODUCT_ID=0x4227;; #? Aura H2O Edition 2 v2
+  379 ) PRODUCT_ID=0x4226;; #? Aura Edition 2 v2
 ## is the next correct?
-  380 ) PRODUCT_ID=0x4229;;
-  381 ) PRODUCT_ID=0x4225;;
+  380 ) PRODUCT_ID=0x4229;; # Forma 32G
+  381 ) PRODUCT_ID=0x4225;; # Aura ONE Limited Edition
   * ) PRODUCT_ID=0x9999;;
 esac
 export PRODUCT_ID
