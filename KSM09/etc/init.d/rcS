@@ -1,5 +1,5 @@
 #!/bin/sh
-
+#KSM20191211; 4.19.14123
 #KSM20180607; 4.8.11090
 #KSM20180717
 
@@ -86,18 +86,29 @@ if  [ $(strings /usr/local/Kobo/pickel | grep -c wait-for-hit) -ge 1 ]; then
   FS_CORRUPT=0
   dosfsck -a -w /dev/mmcblk0p3 || dosfsck -a -w /dev/mmcblk0p3 || dosfsck -a -w /dev/mmcblk0p3 || dosfsck -a -w /dev/mmcblk0p3 || FS_CORRUPT=1
   if [ $FS_CORRUPT == 1 ]; then
-    case $PRODUCT in
-      kraken|phoenix|star)
-        export COORDINATES="80 870 70 70 200 870 70 70";;
-      snow)
-        export COORDINATES="180 -1200 100 100 320 -1200 100 100";;
-      dragon|dahlia|alyssum|nova)
-        export COORDINATES="120 1220 100 100 280 1220 100 100";;
-      daylight)
-        export COORDINATES="100 1640 200 200 300 1640 200 200";;
-      *)
-        export COORDINATES="55 685 60 60 150 685 60 60";
-    esac
+	case $PRODUCT in
+		kraken|phoenix)
+			export COORDINATES="200 740 350 150";;
+		snow)
+			export COORDINATES="250 -1050 570 150";;
+		star)
+			export COORDINATES="160 740 400 150";;
+		dragon|dahlia)
+			export COORDINATES="260 1070 540 130";;
+		alyssum)
+			export COORDINATES="240 1070 550 150";;
+		daylight)
+			export COORDINATES="320 1400 730 170";;
+		nova)
+			export COORDINATES="250 1070 600 150";;
+		frost)
+			export COORDINATES="350 1400 750 200";;
+		storm)
+			export COORDINATES="325 1240 610 150";;
+		*)
+			export COORDINATES="140 600 300 70";;
+		
+	esac
     sleep 5
     zcat /etc/images/$PREFIX\factory-reset.raw.gz | /usr/local/Kobo/pickel showpic
     /usr/local/Kobo/pickel wait-for-hit $COORDINATES
