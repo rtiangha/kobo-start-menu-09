@@ -176,6 +176,7 @@ case $MODEL_NUMBER in
   370) #Aura H2O
     export mousedriver=libKoboTS_h2o.so
     export QWS_MOUSE_PROTO=KoboTS_h2o
+    ;;
   *) # 374|376|378|384|377|380 #Aura H2O2v1, Clara HD, Aura H2O2v2, Libra H2O, Forma, Forma 32GB
     export mousedriver=libKoboTS_h2o2.so
     export QWS_MOUSE_PROTO=KoboTS_h2o2
