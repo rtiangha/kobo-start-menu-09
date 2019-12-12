@@ -1,17 +1,5 @@
 #!/bin/sh
-#20191207_13:30
-#new: rotation setting for storm (Libra H20)
-#20181211_22:00
-#recognize newer models
-#20180927_23:00
-#new: nightmode
-#20180717_21:41
-#new: changed approach to rotation
-#new: settings for nova
-#new: changed: start server at start; enable usbnet; enable wifi
 #20180311_22:37
-#new: handleWifiAfterKOReader
-#20180126_22:46
 #new: isKSMsecondaryversion
 #new: rmc menu
 #new: H2O2 fb=0; mrotation=270
@@ -21,21 +9,26 @@
 #new: handle_update (new version)
 #new: start_plato
 #new: changed approach to rotation
-
+#new: handleWifiAfterKOReader
 
 # H2O2 (snow) would have 2, but the touch driver only supports 0 orientation
 case $PRODUCT in
   dragon|dahlia)
     export ksmrotate=2
     ;;
-  storm)
-    export ksmrotate=1
-    ;;
   *)
     export ksmrotate=0
     ;;
 esac
 
+case $PRODUCT in
+  snow)
+    export QWS_MOUSE_PROTO=KoboTS_h2o2
+    ;;
+  *)
+    export QWS_MOUSE_PROTO=KoboTS
+    ;;
+esac
 
 isKSMsecondaryversion=${isKSMsecondaryversion:-"false"}
 ksmroot=${ksmroot:-"/adds/kbmenu"}
@@ -46,7 +39,7 @@ export ksmroot
 export ksmuser
 export koreaderbasedir=/mnt/onboard/.adds
 export platobasedir=/mnt/onboard/.adds/plato
-export ksmNightmode=false
+
 
 ### function configureKSM - begin
 configureKSM() {
@@ -79,8 +72,7 @@ configureKSM() {
   mrotation=90
   allowRmcViaWifi=true
   handleWifiAfterKOReader=ask_the_user
-  ksmColorsNight="-bg black -fg white -btn green"
-  ksmColorsDay="-fg black -bg white"
+
   vlasovsoftbasedir=
   if [ -e /mnt/onboard/.adds/vlasovsoft/launcher ]; then
     vlasovsoftbasedir=/mnt/onboard/.adds/vlasovsoft
@@ -167,10 +159,6 @@ configureKSM() {
       kobomenuFontsize=60
       kobomenuMenuBarFontsize=50
       ;;
-    nova)
-      kobomenuFontsize=60
-      kobomenuMenuBarFontsize=50
-      ;;
     *)
       kobomenuFontsize=35
       kobomenuMenuBarFontsize=25
@@ -216,10 +204,7 @@ configureKSM() {
   export useDropbear
   export provideSleepInMainMenu
   export allowRmcViaWifi
-  export handleWifiAfterKOReader  
-  export ksmColorsNight
-  export ksmColorsDay
-
+  export handleWifiAfterKOReader
   if [ "$PRODUCT" == "snow" ]; then
     mrotation=270
     enablerotation=false
@@ -276,27 +261,20 @@ echo "dc 0" > /sys/devices/platform/pmic_light.1/lit
 
 modelnr=$($ksmroot/onstart/getmodelnr.sh)
 case $modelnr in
-  310 ) PRODUCT_ID=0x4163;; # Touch A/B
-  320 ) PRODUCT_ID=0x4163;; # Touch C
-  330 ) PRODUCT_ID=0x4173;; # Glo
-  340 ) PRODUCT_ID=0x4183;; # Mini
-  350 ) PRODUCT_ID=0x4193;; # Aura HD
-  360 ) PRODUCT_ID=0x4203;; # Aura
-  370 ) PRODUCT_ID=0x4213;; # Aura H2O
-  371 ) PRODUCT_ID=0x4223;; # Glo HD
-  372 ) PRODUCT_ID=0x4224;; # Touch 2.0
-  373 ) PRODUCT_ID=0x4225;; # Aura ONE
-  374 ) PRODUCT_ID=0x4227;; # Aura H2O Edition 2 v1
-  375 ) PRODUCT_ID=0x4226;; # Aura Edition 2 v1
-  376 ) PRODUCT_ID=0x4228;; # Clara HD
-  377 ) PRODUCT_ID=0x4229;; # Forma
-  378 ) PRODUCT_ID=0x4227;; #? Aura H2O Edition 2 v2
-  379 ) PRODUCT_ID=0x4226;; #? Aura Edition 2 v2
-## is the next correct?
-  380 ) PRODUCT_ID=0x4229;; # Forma 32G
-  381 ) PRODUCT_ID=0x4225;; # Aura ONE Limited Edition
-  384 ) PRODUCT_ID=0x4232;; # Libra H2O
-  * ) PRODUCT_ID=0x9999;;
+  310 ) PRODUCT_ID=0x4163;;
+  320 ) PRODUCT_ID=0x4163;;
+  330 ) PRODUCT_ID=0x4173;;
+  340 ) PRODUCT_ID=0x4183;;
+  350 ) PRODUCT_ID=0x4193;;
+  360 ) PRODUCT_ID=0x4203;;
+  370 ) PRODUCT_ID=0x4213;;
+  371 ) PRODUCT_ID=0x4223;;
+  372 ) PRODUCT_ID=0x4224;;
+  373 ) PRODUCT_ID=0x4225;;
+  374 ) PRODUCT_ID=0x4227;;
+  375 ) PRODUCT_ID=0x4226;;
+  381 ) PRODUCT_ID=0x4228;;
+  * ) PRODUCT_ID=unknown;;
 esac
 export PRODUCT_ID
 export fbrotatevalue=0
@@ -306,20 +284,21 @@ configureKSM
 
 
 if [ "$isKSMsecondaryversion" != "true" ]; then
-  if [ ! -e "${ksmuser}/dont_enable_usbnet_at_boot" ]; then
-    ${ksmroot}/scripts_intern/usb/usbnet_toggle.sh
-  fi
-  if [ ! -e "${ksmuser}/dont_enable_wifi_at_boot" ]; then
-    ${ksmroot}/scripts_intern/wifi/wifi_enable_dhcp.sh
-#sleep 5
-  fi
-  if [ ! -e "${ksmuser}/dont_enable_rmc_at_boot" ]; then
+  if [ ! -e "${ksmuser}/dont_enable_usbnet_at_boot" ] || [ ! -e "${ksmuser}/dont_enable_wifi_at_boot" ]; then
     ${ksmroot}/scripts/web_servers/rmc_start.sh
-    ${ksmroot}/scripts_intern/div/killautormcatsomepoint.sh &>/dev/null &
+    if [ ! -e "${ksmuser}/dont_enable_usbnet_at_boot" ]; then
+      driver_root=/drivers/$PLATFORM/usb/gadget
+      insmod $driver_root/arcotg_udc.ko
+      insmod $driver_root/g_ether.ko host_addr=46:0d:9e:67:69:eb dev_addr=46:0d:9e:67:69:ec
+      ifconfig usb0 192.168.2.101
+    fi
+    if [ ! -e "${ksmuser}/dont_enable_wifi_at_boot" ]; then
+      ${ksmroot}/scripts_intern/wifi/wifi_enable_dhcp.sh
+#sleep 5
+    fi
+    $ksmroot/scripts_intern/div/killautormcatsomepoint.sh &>/dev/null &
   fi
 fi
-
-
 if [ -f "${ksmuser}/start_blank" ]; then
   rm "${ksmuser}/start_blank"
   exit
@@ -402,7 +381,6 @@ setoptions() {
   fi
 
   addMenuEntryStringIfWished "info:help.png"
-  addMenuEntryStringIfWished "toggle_nightmode:toggle.png"
 
   if [ "$enablerotation" == "true" ]; then
     addMenuEntryStringIfWished "toggle_rotation:toggle.png"
@@ -519,13 +497,8 @@ while [ "$selection" != "EXIT" ]; do
     else
       wifiInfo="wifi_ip:_not_enabled"
     fi
-    if [ ! -e "${ksmuser}/dont_enable_rmc_at_boot" ]; then
-      rmcInfo="$(${ksmroot}/scripts_intern/div/get_rmc_state.sh)"
-    else
-      rmcInfo="rmc_server_is_not_running"
-    fi
-    infotext="${usbnetInfo}<br>${wifiInfo}<br>${rmcInfo}"
-    moptions="-infolines=3 -infotext=${infotext} ${moptions}"
+    infotext="${usbnetInfo}<br>${wifiInfo}"
+    moptions="-infolines=2 -infotext=${infotext} ${moptions}"
     isFirstRun="FALSE"
   fi
   selection=$($ksmroot/kobomenu.sh $moptions)
@@ -581,13 +554,6 @@ while [ "$selection" != "EXIT" ]; do
         mrotation="0"
       fi
       export mrotation
-      ;;
-    toggle_nightmode )
-      if [ "${ksmNightmode}" == "true" ]; then
-        export ksmNightmode="false"
-      else
-        export ksmNightmode="true"
-      fi
       ;;
     start_nickel )
       $ksmroot/onstart/start_nickel.sh
