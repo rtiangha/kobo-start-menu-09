@@ -1,6 +1,4 @@
 #!/bin/sh
-#20191207_13:30
-#new: rotation setting for storm (Libra H20)
 #20181211_22:00
 #recognize newer models
 #20180927_23:00
@@ -27,9 +25,6 @@
 case $PRODUCT in
   dragon|dahlia)
     export ksmrotate=2
-    ;;
-  storm)
-    export ksmrotate=1
     ;;
   *)
     export ksmrotate=0
@@ -292,8 +287,8 @@ case $modelnr in
   377 ) PRODUCT_ID=0x4229;; # Forma
   378 ) PRODUCT_ID=0x4227;; #? Aura H2O Edition 2 v2
   379 ) PRODUCT_ID=0x4226;; #? Aura Edition 2 v2
-## is the next correct?
   380 ) PRODUCT_ID=0x4229;; # Forma 32G
+## is the next correct?
   381 ) PRODUCT_ID=0x4225;; # Aura ONE Limited Edition
   384 ) PRODUCT_ID=0x4232;; # Libra H2O
   * ) PRODUCT_ID=0x9999;;
