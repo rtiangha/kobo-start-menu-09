@@ -1,19 +1,5 @@
 #! /bin/sh
 
-# todo: set rotation value for the different device models
-# currently I know only for sure that trilogy|kraken|alyssum|daylight need 3
-case $PRODUCT in
-  dragon|dahlia|snow ) platoRotate="1";;
-  * ) platoRotate="3";;
-esac
-
-if [ "${platoRotate}" != "$(cat /sys/class/graphics/fb0/rotate)" ]; then
-  echo "${platoRotate}" > /sys/class/graphics/fb0/rotate
-  if [ "${platoRotate}" != "$(cat /sys/class/graphics/fb0/rotate)" ]; then
-    echo "$((platoRotate ^ 2))" > /sys/class/graphics/fb0/rotate
-  fi
-fi
-
 # todo: maybe warn when wifi is on?
 
 #${platobasedir}/plato.sh

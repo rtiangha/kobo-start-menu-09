@@ -1,4 +1,6 @@
 #!/bin/sh
+#20191207_13:30
+#new: rotation setting for storm (Libra H20) and recognize Forma
 #20181211_22:00
 #recognize newer models
 #20180927_23:00
@@ -25,6 +27,9 @@
 case $PRODUCT in
   dragon|dahlia)
     export ksmrotate=2
+    ;;
+  storm)
+    export ksmrotate=1
     ;;
   *)
     export ksmrotate=0
