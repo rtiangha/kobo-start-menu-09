@@ -2,129 +2,146 @@
 # 20180719
 # 20180618
 # 20171202 based on 4.6.10075
-
-# ---- Tshering start
-# deleted PRODUCT and PREFIX stuff
-# ---- Tshering start
-
-MODULE_LOADED=`lsmod | grep -c g_file_storage`
+# 20220831 based on 4.33.19759
 
 VENDOR_ID=0x2237
-PLATFORM=freescale
+PRODUCT=`/bin/kobo_config.sh`;
+[ $PRODUCT != trilogy ] && PREFIX=$PRODUCT-
 
-if [ `dd if=/dev/mmcblk0 bs=512 skip=1024 count=1 | grep -c "HW CONFIG"` == 1 ]; then
-  CPU=`ntx_hwconfig -s -p /dev/mmcblk0 CPU`
-  PLATFORM=$CPU-ntx
-fi
+MOUNTARGS="noatime,nodiratime,shortname=mixed,utf8"
 
-if [ $PLATFORM != freescale ] && [ ! -e /etc/u-boot/$PLATFORM/u-boot.mmc ]; then
-  PLATFORM=ntx508
-fi
+legacy_usb() {
+
+	MODULE_LOADED=`lsmod | grep -c -e g_file_storage -e g_mass_storage`
+
+	PLATFORM=freescale
+
+	if [ `dd if=/dev/mmcblk0 bs=512 skip=1024 count=1 | grep -c "HW CONFIG"` == 1 ]; then
+		CPU=`ntx_hwconfig -s -p /dev/mmcblk0 CPU`
+		PLATFORM=$CPU-ntx
+	fi
+
+	if [ $PLATFORM != freescale ] && [ ! -e /etc/u-boot/$PLATFORM/u-boot.mmc ]; then
+		PLATFORM=ntx508
+	fi
 
 
 # ---- Tshering start
 #LUNS=`blkid | tac | grep -v EFI | grep "TYPE=\"vfat\"" | cut -d':' -f1 | xargs | sed -e 's/ /,/'`
 # stay compatible with older versions
-if [ $(blkid | grep -c "TYPE=") -gt 0 ]; then
-  LUNS=`blkid | tac | grep -v EFI | grep "TYPE=\"vfat\"" | cut -d':' -f1 | xargs | sed -e 's/ /,/'`
-else
-  if [ -e /dev/mmcblk1p1 ]; then
-    LUNS=/dev/mmcblk0p3,/dev/mmcblk1p1
-  else
-    LUNS=/dev/mmcblk0p3
-  fi
-fi
+	if [ $(blkid | grep -c "TYPE=") -gt 0 ]; then
+		LUNS=`blkid | tac | grep -v EFI | grep "TYPE=\"vfat\"" | cut -d':' -f1 | xargs | sed -e 's/ /,/'`
+	else
+		if [ -e /dev/mmcblk1p1 ]; then
+			LUNS=/dev/mmcblk0p3,/dev/mmcblk1p1
+		else
+			LUNS=/dev/mmcblk0p3
+		fi
+	fi
 # ---- Tshering end
 
-
-
-if [ $ACTION == add ]; then
+	if [ $ACTION == add ]; then
 
 # ---- Tshering start
 # disable usbnet
-if ifconfig | grep -q usb0; then
-  ifconfig usb0 down
-  rmmod g_ether
-  if [ $CPU == mx6sll ] || [ $CPU == mx6ull ]; then
-    rmmod usb_f_rndis
-    rmmod usb_f_ecm_subset
-    rmmod usb_f_eem
-    rmmod usb_f_ecm
-    rmmod u_ether
-    rmmod libcomposite
-    rmmod configfs
-  else
-    rmmod arcotg_udc
-  fi
-fi
+		if ifconfig | grep -q usb0; then
+			ifconfig usb0 down
+			rmmod g_ether
+			if [ $CPU == mx6sll ] || [ $CPU == mx6ull ]; then
+				rmmod usb_f_rndis
+				rmmod usb_f_ecm_subset
+				rmmod usb_f_eem
+				rmmod usb_f_ecm
+				rmmod u_ether
+				rmmod libcomposite
+				rmmod configfs
+			else
+				rmmod arcotg_udc
+			fi
+		fi
 # ---- Tshering end
 
 # ---- Tshering start
 # note that we only kill the server to provide save usb connecting to usb
 # but we do not start it again when removing
-  killall kiwix-serve
+		killall kiwix-serve
 # ---- Tshering end
 
-  sync
-  umount -l /mnt/onboard
-  umount -l /mnt/sd
+		sync
+		umount -l /mnt/onboard
+		umount -l /mnt/sd
 
-  if [ $CPU == mx6sll ] || [ $CPU == mx6ull ]; then
-    PARAMS="idVendor=$VENDOR_ID idProduct=$PRODUCT_ID iManufacturer=Kobo iProduct=eReader-$VERSION iSerialNumber=$SN"
-    /sbin/insmod /drivers/$PLATFORM/usb/gadget/configfs.ko
-    /sbin/insmod /drivers/$PLATFORM/usb/gadget/libcomposite.ko
-    /sbin/insmod /drivers/$PLATFORM/usb/gadget/usb_f_mass_storage.ko
-  else
-    PARAMS="vendor=$VENDOR_ID product=$PRODUCT_ID vendor_id=Kobo product_id=eReader-$VERSION SN=$SN"
-    /sbin/insmod /drivers/$PLATFORM/usb/gadget/arcotg_udc.ko
-    sleep 2
-  fi
+		if [ -e /drivers/$PLATFORM/g_mass_storage.ko ]; then
+			PARAMS="idVendor=$VENDOR_ID idProduct=$PRODUCT_ID iManufacturer=Kobo iProduct=eReader-$VERSION iSerialNumber=$SN"
+			/sbin/insmod /drivers/$PLATFORM/g_mass_storage.ko file=$LUNS stall=0 removable=1 $PARAMS
 
-  /sbin/insmod /drivers/$PLATFORM/usb/gadget/g_file_storage.ko file=$LUNS stall=1 removable=1 $PARAMS
-  sleep 1
+		else
+			if [ $CPU == mx6sll ] || [ $CPU == mx6ull ]; then
+				PARAMS="idVendor=$VENDOR_ID idProduct=$PRODUCT_ID iManufacturer=Kobo iProduct=eReader-$VERSION iSerialNumber=$SN"
+				/sbin/insmod /drivers/$PLATFORM/usb/gadget/configfs.ko && /sbin/insmod /drivers/$PLATFORM/usb/gadget/libcomposite.ko && /sbin/insmod /drivers/$PLATFORM/usb/gadget/usb_f_mass_storage.ko
+			else
+				PARAMS="vendor=$VENDOR_ID product=$PRODUCT_ID vendor_id=Kobo product_id=eReader-$VERSION SN=$SN"
+				/sbin/insmod /drivers/$PLATFORM/usb/gadget/arcotg_udc.ko
+				sleep 2
+			fi
 
-elif [ $ACTION == remove ]; then
-  if [ $MODULE_LOADED -eq 0 ]; then
-    exit
-  fi
+			/sbin/insmod /drivers/$PLATFORM/usb/gadget/g_file_storage.ko file=$LUNS stall=0 removable=1 $PARAMS
+		fi
 
-  /sbin/rmmod g_file_storage
-  if [ $CPU == mx6sll ] || [ $CPU == mx6ull ]; then
-    /sbin/rmmod usb_f_mass_storage
-    /sbin/rmmod libcomposite
-    /sbin/rmmod configfs
-  else
-    /sbin/rmmod arcotg_udc
-  fi
-  sleep 1
+		sleep 1
 
-  PARTITION=/dev/mmcblk0p3
-  MOUNTARGS="noatime,nodiratime,shortname=mixed,utf8"
+	elif [ $ACTION == remove ]; then
+		if [ $MODULE_LOADED -eq 0 ]; then
+			exit
+		fi
 
-  FS_CORRUPT=0
-  dosfsck -a -w $PARTITION || dosfsck -a -w $PARTITION || dosfsck -a -w $PARTITION || dosfsck -a -w $PARTITION || FS_CORRUPT=1
-  if [ $FS_CORRUPT == 1 ]; then
-    echo "Corruption detected on $PARTITION - rebooting..."
-    reboot
-  fi
-  mount -o $MOUNTARGS -t vfat $PARTITION /mnt/onboard
+		if [ -e /drivers/$PLATFORM/g_mass_storage.ko ]; then
+			/sbin/rmmod g_mass_storage
+
+		else
+			/sbin/rmmod g_file_storage
+			if [ $CPU == mx6sll ] || [ $CPU == mx6ull ]; then
+				/sbin/rmmod usb_f_mass_storage
+				/sbin/rmmod libcomposite
+				/sbin/rmmod configfs
+			else
+				/sbin/rmmod arcotg_udc
+			fi
+		fi
+		sleep 1
+
+		PARTITION=/dev/mmcblk0p3
+
+		FS_CORRUPT=0
+		dosfsck -a -w $PARTITION || dosfsck -a -w $PARTITION || dosfsck -a -w $PARTITION || dosfsck -a -w $PARTITION || FS_CORRUPT=1
+		if [ $FS_CORRUPT == 1 ]; then
+			echo "Corruption detected on $PARTITION - rebooting..."
+			reboot
+		fi
+		mount -o $MOUNTARGS -t vfat $PARTITION /mnt/onboard
 
 # ---- Tshering start
-  if [ $(blkid | grep -c "TYPE=") -gt 0 ]; then
+		if [ $(blkid | grep -c "TYPE=") -gt 0 ]; then
 # ---- Tshering end
-    SD=`blkid | tac | grep -v EFI | grep -v "^/dev/mmcblk0p3" | grep "TYPE=\"vfat\"" | cut -d':' -f1`
-# ---- Tshering start
-  else
-    SD="/dev/mmcblk1p1"
-  fi
+			SD=`blkid | tac | grep -v EFI | grep -v "^/dev/mmcblk0p3" | grep "TYPE=\"vfat\"" | cut -d':' -f1`
 # ---- Tshering end
-  if [ -e $SD ]; then
-    mount -r -t vfat -o $MOUNTARGS $SD /mnt/sd
-  fi
+		else
+			SD="/dev/mmcblk1p1"
+		fi
+# ---- Tshering end
+		if [ -e $SD ]; then
+			mount -r -t vfat -o $MOUNTARGS $SD /mnt/sd
+		fi
 
-  ( sleep 1
-  rm -rf /mnt/onboard/fsck*
-  rm -rf /mnt/onboard/FSCK*
-  ) &
+		( sleep 1
+			rm -rf /mnt/onboard/fsck*
+			rm -rf /mnt/onboard/FSCK*
+		) &
 
-fi
+	fi
+}
+
+
+case $PLATFORM in
+	*) legacy_usb;;
+esac
