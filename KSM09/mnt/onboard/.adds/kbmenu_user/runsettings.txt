@@ -6,4 +6,4 @@
 # runmenu=alternateNickel
 # runmenu=alternateMenu
 
-runmenu=always
+runmenu=alternateMenu
