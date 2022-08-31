@@ -274,6 +274,9 @@ echo "cur 0" > /sys/devices/platform/pmic_light.1/lit
 echo "dc 0" > /sys/devices/platform/pmic_light.1/lit
 #switch off leds end
 
+
+## Can also get model numbers from pgaskin: https://github.com/pgaskin/koboutils/blob/master/kobo/device.go
+## and Product IDs from Calibre: https://github.com/kovidgoyal/calibre/blob/master/src/calibre/devices/kobo/driver.py
 modelnr=$($ksmroot/onstart/getmodelnr.sh)
 case $modelnr in
   310 ) PRODUCT_ID=0x4163;; # Touch A/B
@@ -290,12 +293,15 @@ case $modelnr in
   375 ) PRODUCT_ID=0x4226;; # Aura Edition 2 v1
   376 ) PRODUCT_ID=0x4228;; # Clara HD
   377 ) PRODUCT_ID=0x4229;; # Forma
-  378 ) PRODUCT_ID=0x4227;; #? Aura H2O Edition 2 v2
-  379 ) PRODUCT_ID=0x4226;; #? Aura Edition 2 v2
+  378 ) PRODUCT_ID=0x4227;; # Aura H2O Edition 2 v2
+  379 ) PRODUCT_ID=0x4226;; # Aura Edition 2 v2
   380 ) PRODUCT_ID=0x4229;; # Forma 32G
-## is the next correct?
   381 ) PRODUCT_ID=0x4225;; # Aura ONE Limited Edition
+  382 ) PRODUCT_ID=0x4230;; # Nia
+  383 ) PRODUCT_ID=0x4231;; # Sage
   384 ) PRODUCT_ID=0x4232;; # Libra H2O
+  387 ) PRODUCT_ID=0x4233;; # Elipsa
+  388 ) PRODUCT_ID=0x4234;; # Libra 2
   * ) PRODUCT_ID=0x9999;;
 esac
 export PRODUCT_ID

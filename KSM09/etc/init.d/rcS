@@ -3,6 +3,7 @@
 #KSM20180607; 4.8.11090
 #KSM20180717
 #20200113 - fw v4.25 fix
+#20220830 - Add new devices
 
 if [ ! -e /bin/kobo_config.sh ]; then
   PRODUCT="trilogy"
@@ -171,13 +172,24 @@ ksmroot=/adds/kbmenu
 export ksmroot
 export MODEL_NUMBER=$(cut -f 6 -d ',' /mnt/onboard/.kobo/version | sed -e 's/^[0-]*//')
 case $MODEL_NUMBER in
-  310|320|330|340|350|360|370|371|372|373|375|381)
+  310|320|330|340|350|360|381)
     export mousedriver=libKoboTS.so
     export QWS_MOUSE_PROTO=KoboTS
     ;;
-  *)
+  370|371|372|373|375|379)
+    export mousedriver=libKoboTS_h2o.so
+    export QWS_MOUSE_PROTO=KoboTS_h2o
+  374|376|377|378|382|384)
     export mousedriver=libKoboTS_h2o2.so
     export QWS_MOUSE_PROTO=KoboTS_h2o2
+    ;;
+  388)
+    export mousedriver=libKoboTS_libra2.so
+    export QWS_MOUSE_PROTO=KoboTS_libra2:mirrorx
+    ;;
+  *)
+    export mousedriver=libKoboTS_libra2.so
+    export QWS_MOUSE_PROTO=KoboTS_libra2
     ;;
 esac
 
