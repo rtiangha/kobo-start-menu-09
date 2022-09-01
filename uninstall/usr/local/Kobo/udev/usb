@@ -1,0 +1,92 @@
+#!/bin/sh
+
+VENDOR_ID=0x2237
+PRODUCT=`/bin/kobo_config.sh`;
+[ $PRODUCT != trilogy ] && PREFIX=$PRODUCT-
+
+MOUNTARGS="noatime,nodiratime,shortname=mixed,utf8"
+
+legacy_usb() {
+
+	MODULE_LOADED=`lsmod | grep -c -e g_file_storage -e g_mass_storage`
+
+	PLATFORM=freescale
+
+	if [ `dd if=/dev/mmcblk0 bs=512 skip=1024 count=1 | grep -c "HW CONFIG"` == 1 ]; then
+		CPU=`ntx_hwconfig -s -p /dev/mmcblk0 CPU`
+		PLATFORM=$CPU-ntx
+	fi
+
+	LUNS=`blkid | tac | grep -v EFI | grep "TYPE=\"vfat\"" | cut -d':' -f1 | xargs | sed -e 's/ /,/'`
+
+	if [ $ACTION == add ]; then
+		sync
+		umount -l /mnt/onboard
+		umount -l /mnt/sd
+
+		if [ -e /drivers/$PLATFORM/g_mass_storage.ko ]; then
+			PARAMS="idVendor=$VENDOR_ID idProduct=$PRODUCT_ID iManufacturer=Kobo iProduct=eReader-$VERSION iSerialNumber=$SN"
+			/sbin/insmod /drivers/$PLATFORM/g_mass_storage.ko file=$LUNS stall=0 removable=1 $PARAMS
+
+		else
+			if [ $CPU == mx6sll ] || [ $CPU == mx6ull ]; then
+				PARAMS="idVendor=$VENDOR_ID idProduct=$PRODUCT_ID iManufacturer=Kobo iProduct=eReader-$VERSION iSerialNumber=$SN"
+				/sbin/insmod /drivers/$PLATFORM/usb/gadget/configfs.ko && /sbin/insmod /drivers/$PLATFORM/usb/gadget/libcomposite.ko && /sbin/insmod /drivers/$PLATFORM/usb/gadget/usb_f_mass_storage.ko
+			else
+				PARAMS="vendor=$VENDOR_ID product=$PRODUCT_ID vendor_id=Kobo product_id=eReader-$VERSION SN=$SN"
+				/sbin/insmod /drivers/$PLATFORM/usb/gadget/arcotg_udc.ko
+				sleep 2
+			fi
+
+			/sbin/insmod /drivers/$PLATFORM/usb/gadget/g_file_storage.ko file=$LUNS stall=0 removable=1 $PARAMS
+		fi
+
+		sleep 1
+
+	elif [ $ACTION == remove ]; then
+		if [ $MODULE_LOADED -eq 0 ]; then
+			exit
+		fi
+
+		if [ -e /drivers/$PLATFORM/g_mass_storage.ko ]; then
+			/sbin/rmmod g_mass_storage
+
+		else
+			/sbin/rmmod g_file_storage
+			if [ $CPU == mx6sll ] || [ $CPU == mx6ull ]; then
+				/sbin/rmmod usb_f_mass_storage
+				/sbin/rmmod libcomposite
+				/sbin/rmmod configfs
+			else
+				/sbin/rmmod arcotg_udc
+			fi
+		fi
+		sleep 1
+
+		PARTITION=/dev/mmcblk0p3
+
+		FS_CORRUPT=0
+		dosfsck -a -w $PARTITION || dosfsck -a -w $PARTITION || dosfsck -a -w $PARTITION || dosfsck -a -w $PARTITION || FS_CORRUPT=1
+		if [ $FS_CORRUPT == 1 ]; then
+			echo "Corruption detected on $PARTITION - rebooting..."
+			reboot
+		fi
+		mount -o $MOUNTARGS -t vfat $PARTITION /mnt/onboard
+
+		SD=`blkid | tac | grep -v EFI | grep -v "^/dev/mmcblk0p3" | grep "TYPE=\"vfat\"" | cut -d':' -f1`
+		if [ -e $SD ]; then
+			mount -r -t vfat -o $MOUNTARGS $SD /mnt/sd
+		fi
+
+		( sleep 1
+			rm -rf /mnt/onboard/fsck*
+			rm -rf /mnt/onboard/FSCK*
+		) &
+
+	fi
+}
+
+
+case $PLATFORM in
+	*) legacy_usb;;
+esac

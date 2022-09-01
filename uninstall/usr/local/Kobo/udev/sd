@@ -1,0 +1,36 @@
+#!/bin/sh
+
+if [ "$STARTUP" == "1" ]; then
+	exit;
+fi
+
+MODULE_LOADED=`lsmod | grep -c g_file_storage`
+if [ $MODULE_LOADED -gt 0 ]; then
+	if [ $ACTION == remove ]; then
+		echo sd $ACTION $DEVNAME >> /tmp/nickel-hardware-status
+		ACTION=remove /usr/local/Kobo/udev/plug
+		sleep 5
+		exit
+	fi
+fi
+
+MOUNTARGS="noatime,nodiratime,shortname=mixed,utf8"
+
+if [ $ACTION == add ]; then
+	blkid $DEVNAME | grep -v EFI | grep "TYPE=\"vfat\""
+	if [ $? == 0 ]; then
+		dosfsck -a -w $DEVNAME
+		mount -r -t vfat -o $MOUNTARGS $DEVNAME /mnt/sd
+		if [ $? != 0 ]; then
+			echo sd mount fail $DEVNAME >> /tmp/nickel-hardware-status &
+		else
+			echo sd $ACTION $DEVNAME >> /tmp/nickel-hardware-status &
+		fi
+	fi
+fi
+
+if [ "$ACTION" == "remove" ]; then
+	echo sd $ACTION $DEVNAME >> /tmp/nickel-hardware-status &
+	umount -l /mnt/sd
+	sync
+fi

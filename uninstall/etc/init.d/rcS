@@ -1,0 +1,252 @@
+#!/bin/sh
+
+platform_detect() {
+	PLATFORM=freescale
+	if [ `dd if=/dev/mmcblk0 bs=512 skip=1024 count=1 | grep -c "HW CONFIG"` == 1 ]; then
+		CPU=`ntx_hwconfig -s -p /dev/mmcblk0 CPU`
+		PLATFORM=$CPU-ntx
+		WIFI=`ntx_hwconfig -s -p /dev/mmcblk0 Wifi`
+	fi
+}
+
+rootfs_partition() {
+	case $1 in
+		*)
+			echo /dev/mmcblk0p1;;
+	esac
+}
+
+onboard_partition() {
+	case $1 in
+		*)
+			echo /dev/mmcblk0p3;;
+	esac
+}
+
+write_uboot_env() {
+	if [ $1 == freescale ] || [ $1 == mx50-ntx ] || [ $1 == mx6sl-ntx ] || [ $1 == mx6sll-ntx ] || [ $1 == mx6ull-ntx ]; then
+		dd if=$2 of=/dev/mmcblk0 bs=128k count=1 seek=6
+	fi
+	if [ $1 == b300-ntx ]; then
+		dd if=$2 of=/dev/mmcblk0 bs=512 seek=1286
+	fi
+	sync
+}
+
+platform_detect
+
+ROOTFS_PARTITION=$(rootfs_partition $PLATFORM)
+ONBOARD_PARTITION=$(onboard_partition $PLATFORM)
+
+PRODUCT=`/bin/kobo_config.sh`
+[ $PRODUCT != trilogy ] && PREFIX=$PRODUCT-
+
+mount -o remount,noatime,nodiratime $ROOTFS_PARTITION /
+
+if [ $PLATFORM == freescale ]; then
+	if [ ! -s /lib/firmware/imx/epdc_E60_V220.fw ]; then
+		mkdir -p /lib/firmware/imx
+		dd if=/dev/mmcblk0 bs=512K skip=10 count=1 | zcat > /lib/firmware/imx/epdc_E60_V220.fw
+		sync
+	fi
+fi
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/lib:
+runlevel=S
+prevlevel=N
+umask 022
+export PATH PLATFORM PRODUCT runlevel prevlevel
+
+for i in /proc /dev /root /tmp /sys /mnt/sd /mnt/onboard /mnt/user /var/db /var/lib /var/log /var/run /lib/modules/`uname -r`; do
+	[ ! -d $i ] && mkdir -p $i
+done;
+
+/bin/mount -t proc  none  /proc
+/bin/mount -t tmpfs none /tmp
+/bin/mount -t tmpfs none /dev
+/bin/mount -t tmpfs none -o size=16k /var/lib
+/bin/mount -t tmpfs none -o size=16k /var/log
+/bin/mount -t tmpfs none -o size=128k /var/run
+/bin/mount -t sysfs none -o size=500k /sys
+
+if [ $PLATFORM == b300-ntx ]; then
+	/bin/mount -t debugfs none /sys/kernel/debug
+fi
+
+
+for i in /var/run/dbus /var/lib/dbus; do
+	mkdir -p $i
+done
+
+mkfifo /tmp/nickel-hardware-status
+rm -rf /etc/udev/rules.d/70-persistent-net.rules
+rm -rf /mnt/onboard/.kobo
+rm -rf /mnt/onboard/*
+
+echo -e '\000\000\000\000' > /proc/sys/kernel/hotplug
+/sbin/udevd -d
+
+[ "$(ls -s /etc/udev.tgz | awk '{print $1}')" == 0 ] && rm -rf /etc/udev.tgz
+if [ $PLATFORM == freescale ] || [ ! -e /etc/udev.tgz ]; then
+	/sbin/udevadm control --env=STARTUP=1
+	/sbin/udevadm trigger
+	/sbin/udevadm settle --timeout=2
+	/sbin/udevadm control --env=STARTUP=
+	[ $PLATFORM != freescale ] && tar cpzf /etc/udev.tgz /dev &
+else
+	tar zxf /etc/udev.tgz -C /
+fi
+
+export UBOOT_MMC=/etc/u-boot/$PLATFORM/u-boot.mmc
+export UBOOT_RECOVERY=/etc/u-boot/$PLATFORM/u-boot.recovery
+
+find /usr/local/Trolltech/QtEmbedded-4.6.2-arm/lib/ -type f -exec readahead {} \;
+
+FORCE_FACTORY_RESET=0
+FS_CORRUPT=0
+dosfsck -a -w $ONBOARD_PARTITION || dosfsck -a -w $ONBOARD_PARTITION || dosfsck -a -w $ONBOARD_PARTITION || dosfsck -a -w $ONBOARD_PARTITION || FS_CORRUPT=1
+[ ! -s /usr/local/Kobo/pickel ] && FORCE_FACTORY_RESET=1
+/usr/local/Kobo/pickel should-factory-reset
+if [ $? != 0 ] || [ $FS_CORRUPT == 1 ] || [ $FORCE_FACTORY_RESET == 1 ]; then
+	case $PRODUCT in
+		kraken|phoenix)
+			export COORDINATES="200 740 350 150";;
+		snow)
+			export COORDINATES="250 -1050 570 150";;
+		star|luna)
+			export COORDINATES="160 740 400 150";;
+		dragon|dahlia)
+			export COORDINATES="260 1070 540 130";;
+		alyssum)
+			export COORDINATES="240 1070 550 150";;
+		daylight)
+			export COORDINATES="320 1400 730 170";;
+		nova)
+			export COORDINATES="250 1070 600 150";;
+		frost)
+			export COORDINATES="350 1400 750 200";;
+		storm)
+			export COORDINATES="325 1240 610 150";;
+		europa|cadmus)
+			export COORDINATES="1380 360 195 680";;
+		io) 
+			export COORDINATES="325 1240 610 150";;
+		*)
+			export COORDINATES="140 600 300 70";;
+		
+	esac
+	sleep 5
+	zcat /etc/images/$PREFIX\factory-reset.raw.gz | /usr/local/Kobo/pickel showpic
+	/usr/local/Kobo/pickel wait-for-hit $COORDINATES
+
+	write_uboot_env $PLATFORM $UBOOT_RECOVERY
+	reboot
+	exit
+fi
+
+mount -t vfat -o noatime,nodiratime,shortname=mixed,utf8 $ONBOARD_PARTITION /mnt/onboard
+rm -rf /mnt/onboard/fsck*
+rm -rf /mnt/onboard/FSCK*
+rm -rf /usr/local/Kobo/db.tgz
+chmod u+s /libexec/dbus-daemon-launch-helper
+
+echo -n 8192 > /proc/sys/vm/min_free_kbytes
+echo -n 67108864 > /proc/sys/kernel/shmmax
+
+/usr/local/Kobo/pickel can-upgrade
+CAN_UPGRADE=$?
+
+if [ ! -e /mnt/onboard/.kobo ]; then
+	mkdir -p /mnt/onboard/.kobo
+fi
+
+if [ $CAN_UPGRADE == 1 ] && [ -e /mnt/onboard/.kobo/Kobo.tgz ]; then
+	gunzip -t /mnt/onboard/.kobo/Kobo.tgz && tar zxf /mnt/onboard/.kobo/Kobo.tgz -C /usr/local/Kobo/ && ( cat /usr/local/Kobo/revinfo >> /usr/local/Kobo/install.log )
+	rm /mnt/onboard/.kobo/Kobo.tgz
+	echo "Done upgrading..."
+fi
+                               
+if [ $CAN_UPGRADE == 1 ] && [ -e /mnt/onboard/.kobo/KoboRoot.tgz ]; then
+	write_uboot_env $PLATFORM $UBOOT_RECOVERY
+	zcat /etc/images/$PREFIX\ghostbuster.raw.gz | /usr/local/Kobo/pickel showpic
+	/etc/init.d/update-animator.sh &
+	gunzip -t /mnt/onboard/.kobo/KoboRoot.tgz && tar zxf /mnt/onboard/.kobo/KoboRoot.tgz -C / && ( cat /usr/local/Kobo/revinfo >> /usr/local/Kobo/install.log )
+	if [ -e /mnt/onboard/.kobo/upgrade ]; then
+		/etc/init.d/upgrade-wifi.sh
+		rm -rf /mnt/onboard/.kobo/upgrade
+	fi
+	rm /mnt/onboard/.kobo/KoboRoot.tgz
+
+	killall update-animator.sh
+	echo "Done upgrading..."
+	zcat /etc/images/$PREFIX\ghostbuster.raw.gz | /usr/local/Kobo/pickel showpic
+	zcat /etc/images/$PREFIX\reboot.raw.gz | /usr/local/Kobo/pickel showpic
+	write_uboot_env $PLATFORM $UBOOT_MMC
+	sync
+	reboot
+	exit
+fi
+
+( 
+	if [ $PLATFORM == freescale ] || [ $CPU == mx50 ] || [ $CPU == mx6sl ]; then
+		usleep 400000; 
+	fi
+	/etc/init.d/on-animator.sh
+) &
+
+(
+	/usr/local/Kobo/pickel disable.rtc.alarm
+
+	if [ ! -e /etc/wpa_supplicant/wpa_supplicant.conf ]; then
+		cp /etc/wpa_supplicant/wpa_supplicant.conf.template /etc/wpa_supplicant/wpa_supplicant.conf
+	fi
+
+	/sbin/hwclock -s -u
+) &
+
+/bin/hostname kobo
+
+if [ $PLATFORM == freescale ]; then
+	INTERFACE=wlan0
+	WIFI_MODULE=ar6000
+else
+	INTERFACE=eth0
+	WIFI_MODULE=dhd
+	if [ x$WIFI == "xRTL8189" ]; then
+		WIFI_MODULE=8189fs
+	elif [ x$WIFI == "xRTL8192" ]; then
+		WIFI_MODULE=8192es                                                   
+	elif [ x$WIFI == "xRTL8821CS" ]; then
+		INTERFACE=wlan0
+		WIFI_MODULE=8821cs
+	elif [ x$WIFI == "xRTL8723DS" ]; then
+		INTERFACE=wlan0
+		WIFI_MODULE=8723ds
+	elif [ x$WIFI == "xCYW43455" ]; then
+		INTERFACE=wlan0
+		WIFI_MODULE=bcmdhd
+	elif [ x$WIFI == "x88W8987" ]; then
+		INTERFACE=mlan0
+		WIFI_MODULE=moal
+	fi  
+fi
+
+export INTERFACE
+export WIFI_MODULE
+
+export NICKEL_HOME=/mnt/onboard/.kobo
+export LD_LIBRARY_PATH=/usr/local/Kobo
+export LANG=en_US.UTF-8
+export QT_GSTREAMER_PLAYBIN_AUDIOSINK=alsasink
+export QT_GSTREAMER_PLAYBIN_AUDIOSINK_DEVICE_PARAMETER=bluealsa:DEV=00:00:00:00:00:00
+#export KOBO_DEBUG_STDOUT=1
+#export QT_DEBUG_PLUGINS=1
+
+/bin/dbus-uuidgen > /var/lib/dbus/machine-id
+/bin/dbus-daemon --system &
+export DBUS_SESSION_BUS_ADDRESS=`/bin/dbus-daemon --session --print-address --fork`
+
+/usr/local/Kobo/hindenburg &
+LIBC_FATAL_STDERR_=1 /usr/local/Kobo/nickel -platform kobo -skipFontLoad &
+[ $PLATFORM != freescale ] && rm -rf /dev/mmcblk1* && udevadm trigger &
+[ -e /drivers/$PLATFORM/misc/lowmem.ko ] && insmod /drivers/$PLATFORM/misc/lowmem.ko &
