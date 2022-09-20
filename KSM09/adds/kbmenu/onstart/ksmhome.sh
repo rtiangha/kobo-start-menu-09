@@ -300,6 +300,7 @@ case $modelnr in
   382 ) PRODUCT_ID=0x4230;; # Nia
   383 ) PRODUCT_ID=0x4231;; # Sage
   384 ) PRODUCT_ID=0x4232;; # Libra H2O
+  386 ) PRODUCT_ID=0x4235;; # Clara 2E
   387 ) PRODUCT_ID=0x4233;; # Elipsa
   388 ) PRODUCT_ID=0x4234;; # Libra 2
   * ) PRODUCT_ID=0x9999;;
